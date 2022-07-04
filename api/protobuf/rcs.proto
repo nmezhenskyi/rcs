@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+option go_package = "github.com/nmezhenskyi/rcs/internal/genproto";
+
+package cache;
+
+service CacheService {
+   rpc Set (SetRequest) returns (SetReply) {}
+   rpc Get (GetRequest) returns (GetReply) {}
+   rpc Delete (DeleteRequest) returns (DeleteReply) {}
+   rpc Flush (FlushRequest) returns (FlushReply) {}
+   rpc Length (LengthRequest) returns (LengthReply) {}
+   rpc Ping (PingRequest) returns (PingReply) {}
+}
+
+message SetRequest {
+   bytes value = 1;
+}
+
+message SetReply {
+   string key = 1;
+   bool ok = 2;
+}
+
+message GetRequest {
+   string key = 1;
+}
+
+message GetReply {
+   string key = 1;
+   bytes value = 2;
+   bool ok = 3;
+}
+
+message DeleteRequest {
+   string key = 1;
+}
+
+message DeleteReply {
+   string key = 1;
+   bool ok = 2;
+}
+
+message FlushRequest {}
+
+message FlushReply {
+   bool ok = 1;
+}
+
+message LengthRequest {}
+
+message LengthReply {
+   int64 length = 1;
+}
+
+message PingRequest {
+   string message = 1;
+}
+
+message PingReply {
+   string message = 1;
+}

@@ -1,0 +1,253 @@
+openapi: 3.0.1
+info:
+  title: Remote Caching Server
+  description: 'RCS HTTP API specification.'
+  license:
+    name: MIT
+    url: https://en.wikipedia.org/wiki/MIT_License
+  version: 1.0.0
+paths:
+  /SET/{key}:
+    put:
+      summary: Set value in the store
+      tags:
+        - Commands
+      parameters:
+        - in: path
+          name: key
+          schema:
+            type: string
+          required: true
+          description: Key associated with the value
+      requestBody:
+        description: Base64 encoded value that needs to be stored
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Value'
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SetResponse'
+        400:
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        500:
+          description: Unexpected server error
+          content: {}
+        503:
+          description: Server is unavailable
+          content: {}
+  /GET/{key}:
+    get:
+      summary: Get value from the store
+      tags:
+        - Commands
+      parameters:
+        - in: path
+          name: key
+          schema:
+            type: string
+          required: true
+          description: Key associated with the value
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetResponse'
+        400:
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        500:
+          description: Unexpected server error
+          content: {}
+        503:
+          description: Server is unavailable
+          content: {}
+  /DELETE/{key}:
+    delete:
+      summary: Delete value from the store
+      tags:
+        - Commands
+      parameters:
+        - in: path
+          name: key
+          schema:
+            type: string
+          required: true
+          description: Key associated with the value
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+        400:
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        500:
+          description: Unexpected server error
+          content: {}
+        503:
+          description: Server is unavailable
+          content: {}
+  /FLUSH:
+    delete:
+      summary: Delete all keys from the store
+      tags:
+        - Commands
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlushResponse'
+        500:
+          description: Unexpected server error
+          content: {}
+        503:
+          description: Server is unavailable
+          content: {}
+  /LENGTH:
+    get:
+      summary: Get the number of currently stored keys
+      tags:
+        - Commands
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LengthResponse'
+        500:
+          description: Unexpected server error
+          content: {}
+        503:
+          description: Server is unavailable
+          content: {}
+  /PING:
+    get:
+      summary: Check if the server is alive
+      tags:
+        - Commands
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PingResponse'
+        500:
+          description: Unexpected server error
+          content: {}
+        503:
+          description: Server is unavailable
+          content: {}
+components:
+  schemas:
+    Value:
+      description: Base64 encoded value
+      type: string
+      format: byte
+    SetResponse:
+      type: object
+      properties:
+        command:
+          description: Executed command
+          type: string
+        key:
+          description: Specified key
+          type: string
+        ok:
+          description: Operation status
+          type: boolean
+    GetResponse:
+      type: object
+      properties:
+        command:
+          description: Executed command
+          type: string
+        key:
+          description: Specified key
+          type: string
+        value:
+          description: Retrieved value (if any)
+          type: string
+          format: byte
+        ok:
+          description: Operation status
+          type: boolean
+    DeleteResponse:
+      type: object
+      properties:
+        command:
+          description: Executed command
+          type: string
+        key:
+          description: Specified key
+          type: string
+        ok:
+          description: Operation status
+          type: boolean
+    FlushResponse:
+      type: object
+      properties:
+        command:
+          description: Executed command
+          type: string
+        ok:
+          description: Operation status
+          type: boolean
+    LengthResponse:
+      type: object
+      properties:
+        command:
+          description: Executed command
+          type: string
+        value:
+          description: Number of keys
+          type: integer
+        ok:
+          description: Operation status
+          type: boolean
+    PingResponse:
+      type: object
+      properties:
+        command:
+          description: Executed command
+          type: string
+        message:
+          description: Operation response message
+          type: string
+        ok:
+          description: Operation status
+          type: boolean
+    ErrorResponse:
+      type: object
+      properties:
+        command:
+          description: Executed command
+          type: string
+        message:
+          description: Error message
+          type: string
+        ok:
+          description: Operation status
+          type: boolean

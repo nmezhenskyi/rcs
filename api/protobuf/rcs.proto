@@ -14,7 +14,8 @@ service CacheService {
 }
 
 message SetRequest {
-   bytes value = 1;
+   string key = 1;
+   bytes value = 2;
 }
 
 message SetReply {

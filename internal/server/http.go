@@ -43,6 +43,10 @@ func NewHTTPServer() *HTTPServer {
 	return s
 }
 
+func (s *HTTPServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s.router.ServeHTTP(w, r)
+}
+
 func (s *HTTPServer) ListenAndServe(addr string) error {
 	s.server.Addr = addr
 	return s.server.ListenAndServe()
@@ -57,8 +61,8 @@ func (s *HTTPServer) Shutdown(ctx context.Context) error {
 	return s.server.Shutdown(ctx)
 }
 
-func (s *HTTPServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.router.ServeHTTP(w, r)
+func (s *HTTPServer) Close() error {
+	return s.server.Close()
 }
 
 // --- Private: --- //

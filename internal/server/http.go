@@ -3,9 +3,7 @@ package server
 import (
 	"context"
 	"crypto/tls"
-	"encoding/base64"
 	"encoding/json"
-	"io"
 	"net/http"
 	"time"
 
@@ -77,28 +75,27 @@ func (s *HTTPServer) setupRoutes() {
 }
 
 func (s *HTTPServer) handleSet() httprouter.Handle {
+	type request struct {
+		Value string `json:"value"`
+	}
 	return func(w http.ResponseWriter, req *http.Request, p httprouter.Params) {
 		key := p.ByName("key")
 		if key == "" {
 			sendBadRequest(w, "SET", "Key cannot be an empty string")
 			return
 		}
-		reqData, err := io.ReadAll(req.Body)
+		reqData := request{}
+		err := json.NewDecoder(req.Body).Decode(&reqData)
 		if err != nil {
-			sendBadRequest(w, "SET", "Failed to read request body")
+			sendBadRequest(w, "SET", "Failed to decode request body")
 			return
 		}
-		if len(reqData) == 0 {
-			sendBadRequest(w, "SET", "Value is missing in the request body")
-			return
-		}
-		value, err := base64.StdEncoding.DecodeString(string(reqData))
-		if err != nil {
-			sendBadRequest(w, "GET", "Failed to decode request body")
+		if len(reqData.Value) == 0 {
+			sendBadRequest(w, "SET", "Value cannot be empty")
 			return
 		}
 
-		s.cache.Set(key, value)
+		s.cache.Set(key, []byte(reqData.Value))
 
 		res := httpResponse{
 			Command: "SET",
@@ -110,7 +107,7 @@ func (s *HTTPServer) handleSet() httprouter.Handle {
 }
 
 func (s *HTTPServer) handleGet() httprouter.Handle {
-	return func(w http.ResponseWriter, req *http.Request, p httprouter.Params) {
+	return func(w http.ResponseWriter, _ *http.Request, p httprouter.Params) {
 		key := p.ByName("key")
 		if key == "" {
 			sendBadRequest(w, "GET", "Key cannot be an empty string")
@@ -118,12 +115,11 @@ func (s *HTTPServer) handleGet() httprouter.Handle {
 		}
 
 		value, ok := s.cache.Get(key)
-		encoded := base64.StdEncoding.EncodeToString(value)
 
 		res := httpResponse{
 			Command: "GET",
 			Key:     key,
-			Value:   encoded,
+			Value:   string(value),
 			Ok:      ok,
 		}
 		sendJSON(w, 200, res)
@@ -131,7 +127,7 @@ func (s *HTTPServer) handleGet() httprouter.Handle {
 }
 
 func (s *HTTPServer) handleDelete() httprouter.Handle {
-	return func(w http.ResponseWriter, req *http.Request, p httprouter.Params) {
+	return func(w http.ResponseWriter, _ *http.Request, p httprouter.Params) {
 		key := p.ByName("key")
 		if key == "" {
 			sendBadRequest(w, "DELETE", "Key cannot be an empty string")
@@ -150,7 +146,7 @@ func (s *HTTPServer) handleDelete() httprouter.Handle {
 }
 
 func (s *HTTPServer) handleFlush() httprouter.Handle {
-	return func(w http.ResponseWriter, req *http.Request, p httprouter.Params) {
+	return func(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
 		s.cache.Flush()
 		res := httpResponse{
 			Command: "FLUSH",
@@ -161,7 +157,7 @@ func (s *HTTPServer) handleFlush() httprouter.Handle {
 }
 
 func (s *HTTPServer) handleLength() httprouter.Handle {
-	return func(w http.ResponseWriter, req *http.Request, p httprouter.Params) {
+	return func(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
 		length := s.cache.Length()
 		res := httpResponse{
 			Command: "LENGTH",
@@ -173,7 +169,7 @@ func (s *HTTPServer) handleLength() httprouter.Handle {
 }
 
 func (s *HTTPServer) handlePing() httprouter.Handle {
-	return func(w http.ResponseWriter, req *http.Request, p httprouter.Params) {
+	return func(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
 		sendJSON(w, 200, httpResponse{Command: "PING", Message: "PONG", Ok: true})
 	}
 }

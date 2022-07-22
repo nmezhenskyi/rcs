@@ -16,6 +16,15 @@ func TestNewHTTPServer(t *testing.T) {
 	if server == nil {
 		t.Error("Expected pointer to initialized HTTPServer, got nil instead")
 	}
+	if server.server == nil {
+		t.Error("HTTPServer.server has not been initialized")
+	}
+	if server.router == nil {
+		t.Error("HTTPServer.router has not been initialized")
+	}
+	if server.cache == nil {
+		t.Error("HTTPServer.cache has not been initialized")
+	}
 }
 
 func TestSetHTTP(t *testing.T) {
@@ -64,7 +73,7 @@ func TestSetHTTP(t *testing.T) {
 				t.Errorf("Failed to send request: %v", err)
 			}
 			if code := res.Result().StatusCode; code != tc.expectedCode {
-				t.Errorf("Expected response status code %d, got %d", tc.expectedCode, code)
+				t.Errorf("Expected response status code %d, got %d instead", tc.expectedCode, code)
 			}
 		})
 	}
@@ -113,7 +122,7 @@ func TestGetHTTP(t *testing.T) {
 				t.Errorf("Failed to send request: %v", err)
 			}
 			if code := res.Result().StatusCode; code != tc.expectedCode {
-				t.Errorf("Expected response status code %d, got %d", tc.expectedCode, code)
+				t.Errorf("Expected response status code %d, got %d instead", tc.expectedCode, code)
 			}
 
 			resData := httpResponse{}
@@ -123,7 +132,7 @@ func TestGetHTTP(t *testing.T) {
 				t.Error("Not ok")
 			}
 			if bytes.Compare([]byte(val), tc.expectedValue) != 0 {
-				t.Errorf("Expected value %v, instead got %v", tc.expectedValue, []byte(val))
+				t.Errorf("Expected value %v, got %v instead", tc.expectedValue, []byte(val))
 			}
 		})
 	}
@@ -142,7 +151,7 @@ func TestDeleteHTTP(t *testing.T) {
 		t.Errorf("Failed to send request: %v", err)
 	}
 	if code := res.Result().StatusCode; code != http.StatusOK {
-		t.Errorf("Expected response status code %d, got %d", http.StatusOK, code)
+		t.Errorf("Expected response status code %d, got %d instead", http.StatusOK, code)
 	}
 	if server.cache.Length() != lengthBefore-1 {
 		t.Errorf("Cache length has not changed")
@@ -160,7 +169,7 @@ func TestFlushHTTP(t *testing.T) {
 		t.Errorf("Failed to send request: %v", err)
 	}
 	if code := res.Result().StatusCode; code != http.StatusOK {
-		t.Errorf("Expected response status code %d, got %d", http.StatusOK, code)
+		t.Errorf("Expected response status code %d, got %d instead", http.StatusOK, code)
 	}
 	if server.cache.Length() != 0 {
 		t.Errorf("Cache is not empty")
@@ -180,7 +189,7 @@ func TestLengthHTTP(t *testing.T) {
 		t.Errorf("Failed to send request: %v", err)
 	}
 	if code := res.Result().StatusCode; code != http.StatusOK {
-		t.Errorf("Expected response status code %d, got %d", http.StatusOK, code)
+		t.Errorf("Expected response status code %d, got %d instead", http.StatusOK, code)
 	}
 
 	resData := httpResponse{}
@@ -191,7 +200,7 @@ func TestLengthHTTP(t *testing.T) {
 	}
 	actualLength := server.cache.Length()
 	if int(val) != actualLength {
-		t.Errorf("Expected length %d, got %d", actualLength, int(val))
+		t.Errorf("Expected length %d, got %d instead", actualLength, int(val))
 	}
 }
 
@@ -202,7 +211,7 @@ func TestPingHTTP(t *testing.T) {
 		t.Errorf("Failed to send request: %v", err)
 	}
 	if code := res.Result().StatusCode; code != http.StatusOK {
-		t.Errorf("Expected response status code %d, got %d", http.StatusOK, code)
+		t.Errorf("Expected response status code %d, got %d instead", http.StatusOK, code)
 	}
 }
 

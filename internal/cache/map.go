@@ -30,7 +30,7 @@ func (cm *CacheMap) Delete(key string) {
 	cm.Unlock()
 }
 
-func (cm *CacheMap) Flush() {
+func (cm *CacheMap) Purge() {
 	cm.Lock()
 	cm.items = make(map[string][]byte)
 	cm.Unlock()
@@ -41,4 +41,16 @@ func (cm *CacheMap) Length() int {
 	length := len(cm.items)
 	cm.RUnlock()
 	return length
+}
+
+func (cm *CacheMap) Keys() []string {
+	cm.RLock()
+	keys := make([]string, len(cm.items))
+	i := 0
+	for k := range cm.items {
+		keys[i] = k
+		i++
+	}
+	cm.RUnlock()
+	return keys
 }

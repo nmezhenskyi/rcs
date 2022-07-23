@@ -3,7 +3,7 @@ package cache
 import "sync"
 
 type CacheMap struct {
-	sync.RWMutex
+	mu    sync.RWMutex
 	items map[string][]byte
 }
 
@@ -12,45 +12,45 @@ func NewCacheMap() *CacheMap {
 }
 
 func (cm *CacheMap) Set(key string, value []byte) {
-	cm.Lock()
+	cm.mu.Lock()
 	cm.items[key] = value
-	cm.Unlock()
+	cm.mu.Unlock()
 }
 
 func (cm *CacheMap) Get(key string) (value []byte, ok bool) {
-	cm.RLock()
+	cm.mu.RLock()
 	value, ok = cm.items[key]
-	cm.RUnlock()
+	cm.mu.RUnlock()
 	return value, ok
 }
 
 func (cm *CacheMap) Delete(key string) {
-	cm.Lock()
+	cm.mu.Lock()
 	delete(cm.items, key)
-	cm.Unlock()
+	cm.mu.Unlock()
 }
 
 func (cm *CacheMap) Purge() {
-	cm.Lock()
+	cm.mu.Lock()
 	cm.items = make(map[string][]byte)
-	cm.Unlock()
+	cm.mu.Unlock()
 }
 
 func (cm *CacheMap) Length() int {
-	cm.RLock()
+	cm.mu.RLock()
 	length := len(cm.items)
-	cm.RUnlock()
+	cm.mu.RUnlock()
 	return length
 }
 
 func (cm *CacheMap) Keys() []string {
-	cm.RLock()
+	cm.mu.RLock()
 	keys := make([]string, len(cm.items))
 	i := 0
 	for k := range cm.items {
 		keys[i] = k
 		i++
 	}
-	cm.RUnlock()
+	cm.mu.RUnlock()
 	return keys
 }

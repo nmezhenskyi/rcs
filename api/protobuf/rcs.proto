@@ -8,7 +8,7 @@ service CacheService {
    rpc Set (SetRequest) returns (SetReply) {}
    rpc Get (GetRequest) returns (GetReply) {}
    rpc Delete (DeleteRequest) returns (DeleteReply) {}
-   rpc Flush (FlushRequest) returns (FlushReply) {}
+   rpc Purge (PurgeRequest) returns (PurgeReply) {}
    rpc Length (LengthRequest) returns (LengthReply) {}
    rpc Ping (PingRequest) returns (PingReply) {}
 }
@@ -42,9 +42,9 @@ message DeleteReply {
    bool ok = 2;
 }
 
-message FlushRequest {}
+message PurgeRequest {}
 
-message FlushReply {
+message PurgeReply {
    bool ok = 1;
 }
 

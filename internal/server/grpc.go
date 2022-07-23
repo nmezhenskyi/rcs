@@ -59,9 +59,9 @@ func (s *GRPCServer) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Dele
 	return &pb.DeleteReply{Key: key, Ok: true}, nil
 }
 
-func (s *GRPCServer) Flush(ctx context.Context, in *pb.FlushRequest) (*pb.FlushReply, error) {
-	s.cache.Flush()
-	return &pb.FlushReply{Ok: true}, nil
+func (s *GRPCServer) Purge(ctx context.Context, in *pb.PurgeRequest) (*pb.PurgeReply, error) {
+	s.cache.Purge()
+	return &pb.PurgeReply{Ok: true}, nil
 }
 
 func (s *GRPCServer) Length(ctx context.Context, in *pb.LengthRequest) (*pb.LengthReply, error) {

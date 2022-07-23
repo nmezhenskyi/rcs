@@ -69,7 +69,7 @@ func (s *HTTPServer) setupRoutes() {
 	s.router.PUT("/SET/:key", s.handleSet())
 	s.router.GET("/GET/:key", s.handleGet())
 	s.router.DELETE("/DELETE/:key", s.handleDelete())
-	s.router.DELETE("/FLUSH", s.handleFlush())
+	s.router.DELETE("/PURGE", s.handlePurge())
 	s.router.GET("/LENGTH", s.handleLength())
 	s.router.GET("/PING", s.handlePing())
 }
@@ -145,9 +145,9 @@ func (s *HTTPServer) handleDelete() httprouter.Handle {
 	}
 }
 
-func (s *HTTPServer) handleFlush() httprouter.Handle {
+func (s *HTTPServer) handlePurge() httprouter.Handle {
 	return func(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
-		s.cache.Flush()
+		s.cache.Purge()
 		res := httpResponse{
 			Command: "FLUSH",
 			Ok:      true,

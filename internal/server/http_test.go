@@ -158,13 +158,13 @@ func TestDeleteHTTP(t *testing.T) {
 	}
 }
 
-func TestFlushHTTP(t *testing.T) {
+func TestPurgeHTTP(t *testing.T) {
 	server := NewHTTPServer()
 	server.cache.Set("key1", []byte("10"))
 	server.cache.Set("key2", []byte("20"))
 	server.cache.Set("key3", []byte("30"))
 
-	res, err := sendRequestHTTP("DELETE", "/FLUSH", nil, server)
+	res, err := sendRequestHTTP("DELETE", "/PURGE", nil, server)
 	if err != nil {
 		t.Errorf("Failed to send request: %v", err)
 	}

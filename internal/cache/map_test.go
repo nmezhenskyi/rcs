@@ -1,6 +1,10 @@
 package cache
 
-import "testing"
+import (
+	"bytes"
+	"sort"
+	"testing"
+)
 
 func TestNewCacheMap(t *testing.T) {
 	cmap := NewCacheMap()
@@ -22,7 +26,7 @@ func TestSet(t *testing.T) {
 	if !ok {
 		t.Error("Key has not been set")
 	}
-	if !equalBytes(retrieved, value) {
+	if bytes.Compare(retrieved, value) != 0 {
 		t.Error("Retrieved value is not the same")
 	}
 
@@ -52,7 +56,7 @@ func TestGet(t *testing.T) {
 	if !ok {
 		t.Error("Key not found")
 	}
-	if !equalBytes(retrieved, value) {
+	if bytes.Compare(retrieved, value) != 0 {
 		t.Error("Retrieved value is not the same")
 	}
 }
@@ -75,7 +79,7 @@ func TestDelete(t *testing.T) {
 	}
 }
 
-func TestFlush(t *testing.T) {
+func TestPurge(t *testing.T) {
 	cmap := NewCacheMap()
 	cmap.items = map[string][]byte{
 		"key1": []byte("value1"),
@@ -85,7 +89,7 @@ func TestFlush(t *testing.T) {
 		"key5": []byte("value5"),
 	}
 
-	cmap.Flush()
+	cmap.Purge()
 	if len(cmap.items) != 0 {
 		t.Errorf("Expected empty map, instead found %d keys", len(cmap.items))
 	}
@@ -107,14 +111,29 @@ func TestLength(t *testing.T) {
 	}
 }
 
-func equalBytes(s1, s2 []byte) bool {
-	if len(s1) != len(s2) {
-		return false
+func TestKeys(t *testing.T) {
+	cmap := NewCacheMap()
+	cmap.items = map[string][]byte{
+		"key1": []byte("value1"),
+		"key2": []byte("value2"),
+		"key3": []byte("value3"),
+		"key4": []byte("value4"),
+		"key5": []byte("value5"),
 	}
-	for i := range s1 {
-		if s1[i] != s2[i] {
-			return false
+	expectedKeys := []string{"key1", "key2", "key3", "key4", "key5"}
+
+	keys := cmap.Keys()
+	if len(keys) != len(expectedKeys) {
+		t.Errorf("Expected %d keys, got %d instead", len(expectedKeys), len(keys))
+	}
+	if len(keys) != len(cmap.items) {
+		t.Error("Number of keys does not match the length of the map")
+	}
+
+	sort.Strings(keys)
+	for i := range keys {
+		if keys[i] != expectedKeys[i] {
+			t.Errorf("Keys do not match the expected ones")
 		}
 	}
-	return true
 }

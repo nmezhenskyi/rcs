@@ -106,7 +106,7 @@ paths:
         503:
           description: Server is unavailable
           content: {}
-  /FLUSH:
+  /PURGE:
     delete:
       summary: Delete all keys from the store
       tags:
@@ -117,7 +117,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FlushResponse'
+                $ref: '#/components/schemas/PurgeResponse'
         500:
           description: Unexpected server error
           content: {}
@@ -163,9 +163,12 @@ paths:
 components:
   schemas:
     Value:
-      description: Base64 encoded value
-      type: string
-      format: byte
+      type: object
+      properties:
+        value:
+          description: Base64 encoded value
+          type: string
+          format: byte
     SetResponse:
       type: object
       properties:
@@ -206,7 +209,7 @@ components:
         ok:
           description: Operation status
           type: boolean
-    FlushResponse:
+    PurgeResponse:
       type: object
       properties:
         command:

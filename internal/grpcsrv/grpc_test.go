@@ -1,4 +1,4 @@
-package server
+package grpcsrv
 
 import (
 	"context"
@@ -9,8 +9,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-func TestNewGRPCServer(t *testing.T) {
-	server := NewGRPCServer()
+func TestNewServer(t *testing.T) {
+	server := NewServer()
 	if server == nil {
 		t.Error("Expected pointer to initialized GRPCServer, got nil instead")
 	}
@@ -22,8 +22,8 @@ func TestNewGRPCServer(t *testing.T) {
 	}
 }
 
-func TestSetGRPC(t *testing.T) {
-	server := NewGRPCServer()
+func TestSet(t *testing.T) {
+	server := NewServer()
 	serverAddr := "localhost:5001"
 	go func() {
 		server.ListenAndServe(serverAddr)
@@ -76,23 +76,23 @@ func TestSetGRPC(t *testing.T) {
 	server.Shutdown()
 }
 
-func TestGetGRPC(t *testing.T) {
+func TestGet(t *testing.T) {
 
 }
 
-func TestDeleteGRPC(t *testing.T) {
+func TestDelete(t *testing.T) {
 
 }
 
-func TestFlushGRPC(t *testing.T) {
+func TestPurge(t *testing.T) {
 
 }
 
-func TestLengthGRPC(t *testing.T) {
+func TestLength(t *testing.T) {
 
 }
 
-func TestPingGRPC(t *testing.T) {
+func TestPing(t *testing.T) {
 
 }
 

@@ -1,4 +1,4 @@
-package server
+package grpcsrv
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-type GRPCServer struct {
+type Server struct {
 	pb.UnimplementedCacheServiceServer // Embed for forward compatibility.
 
 	server *grpc.Server
@@ -18,9 +18,9 @@ type GRPCServer struct {
 
 // --- Public API: --- //
 
-func NewGRPCServer(opts ...grpc.ServerOption) *GRPCServer {
+func NewServer(opts ...grpc.ServerOption) *Server {
 	s := grpc.NewServer(opts...)
-	grpcServer := &GRPCServer{
+	grpcServer := &Server{
 		server: s,
 		cache:  cache.NewCacheMap(),
 	}
@@ -28,7 +28,7 @@ func NewGRPCServer(opts ...grpc.ServerOption) *GRPCServer {
 	return grpcServer
 }
 
-func (s *GRPCServer) Set(ctx context.Context, in *pb.SetRequest) (*pb.SetReply, error) {
+func (s *Server) Set(ctx context.Context, in *pb.SetRequest) (*pb.SetReply, error) {
 	key := in.GetKey()
 	value := in.GetValue()
 	if len(key) == 0 {
@@ -41,7 +41,7 @@ func (s *GRPCServer) Set(ctx context.Context, in *pb.SetRequest) (*pb.SetReply, 
 	return &pb.SetReply{Key: key, Ok: true}, nil
 }
 
-func (s *GRPCServer) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+func (s *Server) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
 	key := in.GetKey()
 	if len(key) == 0 {
 		return &pb.GetReply{Key: key, Ok: false}, nil
@@ -50,7 +50,7 @@ func (s *GRPCServer) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, 
 	return &pb.GetReply{Key: key, Value: value, Ok: ok}, nil
 }
 
-func (s *GRPCServer) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.DeleteReply, error) {
+func (s *Server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.DeleteReply, error) {
 	key := in.GetKey()
 	if len(key) == 0 {
 		return &pb.DeleteReply{Key: key, Ok: false}, nil
@@ -59,21 +59,21 @@ func (s *GRPCServer) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Dele
 	return &pb.DeleteReply{Key: key, Ok: true}, nil
 }
 
-func (s *GRPCServer) Purge(ctx context.Context, in *pb.PurgeRequest) (*pb.PurgeReply, error) {
+func (s *Server) Purge(ctx context.Context, in *pb.PurgeRequest) (*pb.PurgeReply, error) {
 	s.cache.Purge()
 	return &pb.PurgeReply{Ok: true}, nil
 }
 
-func (s *GRPCServer) Length(ctx context.Context, in *pb.LengthRequest) (*pb.LengthReply, error) {
+func (s *Server) Length(ctx context.Context, in *pb.LengthRequest) (*pb.LengthReply, error) {
 	length := s.cache.Length()
 	return &pb.LengthReply{Length: int64(length)}, nil
 }
 
-func (s *GRPCServer) Ping(ctx context.Context, in *pb.PingRequest) (*pb.PingReply, error) {
+func (s *Server) Ping(ctx context.Context, in *pb.PingRequest) (*pb.PingReply, error) {
 	return &pb.PingReply{Message: "Pong"}, nil
 }
 
-func (s *GRPCServer) ListenAndServe(addr string) error {
+func (s *Server) ListenAndServe(addr string) error {
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		return err
@@ -81,10 +81,10 @@ func (s *GRPCServer) ListenAndServe(addr string) error {
 	return s.server.Serve(lis)
 }
 
-func (s *GRPCServer) Shutdown() {
+func (s *Server) Shutdown() {
 	s.server.GracefulStop()
 }
 
-func (s *GRPCServer) Close() {
+func (s *Server) Close() {
 	s.server.Stop()
 }

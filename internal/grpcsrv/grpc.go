@@ -70,7 +70,7 @@ func (s *Server) Length(ctx context.Context, in *pb.LengthRequest) (*pb.LengthRe
 }
 
 func (s *Server) Ping(ctx context.Context, in *pb.PingRequest) (*pb.PingReply, error) {
-	return &pb.PingReply{Message: "Pong", Ok: true}, nil
+	return &pb.PingReply{Message: "PONG", Ok: true}, nil
 }
 
 func (s *Server) ListenAndServe(addr string) error {

@@ -26,6 +26,10 @@ test:
 clean:
 	-@rm -r ./bin 2>/dev/null || true
 
+.PHONY: cleanproto
+cleanproto:
+	-@rm -r ./internal/genproto 2>/dev/null || true
+
 .PHONY: compile
 compile: build run
 

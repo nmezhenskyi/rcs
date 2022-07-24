@@ -27,7 +27,7 @@ func TestNewServer(t *testing.T) {
 	}
 }
 
-func TestSetHTTP(t *testing.T) {
+func TestSet(t *testing.T) {
 	server := NewServer()
 
 	testCases := []struct {
@@ -68,7 +68,7 @@ func TestSetHTTP(t *testing.T) {
 			if err != nil {
 				t.Errorf("Failed to encode data into JSON: %v", err)
 			}
-			res, err := sendRequestHTTP("PUT", url, bytes.NewReader(byteData), server)
+			res, err := sendRequest("PUT", url, bytes.NewReader(byteData), server)
 			if err != nil {
 				t.Errorf("Failed to send request: %v", err)
 			}
@@ -79,7 +79,7 @@ func TestSetHTTP(t *testing.T) {
 	}
 }
 
-func TestGetHTTP(t *testing.T) {
+func TestGet(t *testing.T) {
 	server := NewServer()
 
 	testCases := []struct {
@@ -117,7 +117,7 @@ func TestGetHTTP(t *testing.T) {
 			}
 
 			url := fmt.Sprintf("/GET/%s", tc.key)
-			res, err := sendRequestHTTP("GET", url, nil, server)
+			res, err := sendRequest("GET", url, nil, server)
 			if err != nil {
 				t.Errorf("Failed to send request: %v", err)
 			}
@@ -138,7 +138,7 @@ func TestGetHTTP(t *testing.T) {
 	}
 }
 
-func TestDeleteHTTP(t *testing.T) {
+func TestDelete(t *testing.T) {
 	server := NewServer()
 	server.cache.Set("key1", []byte("10"))
 	server.cache.Set("key2", []byte("20"))
@@ -146,7 +146,7 @@ func TestDeleteHTTP(t *testing.T) {
 	lengthBefore := server.cache.Length()
 
 	url := fmt.Sprintf("/DELETE/%s", "key1")
-	res, err := sendRequestHTTP("DELETE", url, nil, server)
+	res, err := sendRequest("DELETE", url, nil, server)
 	if err != nil {
 		t.Errorf("Failed to send request: %v", err)
 	}
@@ -158,13 +158,13 @@ func TestDeleteHTTP(t *testing.T) {
 	}
 }
 
-func TestPurgeHTTP(t *testing.T) {
+func TestPurge(t *testing.T) {
 	server := NewServer()
 	server.cache.Set("key1", []byte("10"))
 	server.cache.Set("key2", []byte("20"))
 	server.cache.Set("key3", []byte("30"))
 
-	res, err := sendRequestHTTP("DELETE", "/PURGE", nil, server)
+	res, err := sendRequest("DELETE", "/PURGE", nil, server)
 	if err != nil {
 		t.Errorf("Failed to send request: %v", err)
 	}
@@ -176,7 +176,7 @@ func TestPurgeHTTP(t *testing.T) {
 	}
 }
 
-func TestLengthHTTP(t *testing.T) {
+func TestLength(t *testing.T) {
 	server := NewServer()
 	server.cache.Set("key1", []byte("10"))
 	server.cache.Set("key2", []byte("20"))
@@ -184,7 +184,7 @@ func TestLengthHTTP(t *testing.T) {
 	server.cache.Set("key4", []byte("40"))
 	server.cache.Set("key5", []byte("50"))
 
-	res, err := sendRequestHTTP("GET", "/LENGTH", nil, server)
+	res, err := sendRequest("GET", "/LENGTH", nil, server)
 	if err != nil {
 		t.Errorf("Failed to send request: %v", err)
 	}
@@ -204,9 +204,9 @@ func TestLengthHTTP(t *testing.T) {
 	}
 }
 
-func TestPingHTTP(t *testing.T) {
+func TestPing(t *testing.T) {
 	server := NewServer()
-	res, err := sendRequestHTTP("GET", "/PING", nil, server)
+	res, err := sendRequest("GET", "/PING", nil, server)
 	if err != nil {
 		t.Errorf("Failed to send request: %v", err)
 	}
@@ -215,7 +215,7 @@ func TestPingHTTP(t *testing.T) {
 	}
 }
 
-func sendRequestHTTP(
+func sendRequest(
 	method, url string,
 	body io.Reader,
 	server *Server,

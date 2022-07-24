@@ -66,11 +66,11 @@ func (s *Server) Purge(ctx context.Context, in *pb.PurgeRequest) (*pb.PurgeReply
 
 func (s *Server) Length(ctx context.Context, in *pb.LengthRequest) (*pb.LengthReply, error) {
 	length := s.cache.Length()
-	return &pb.LengthReply{Length: int64(length)}, nil
+	return &pb.LengthReply{Length: int64(length), Ok: true}, nil
 }
 
 func (s *Server) Ping(ctx context.Context, in *pb.PingRequest) (*pb.PingReply, error) {
-	return &pb.PingReply{Message: "Pong"}, nil
+	return &pb.PingReply{Message: "Pong", Ok: true}, nil
 }
 
 func (s *Server) ListenAndServe(addr string) error {

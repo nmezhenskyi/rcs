@@ -30,6 +30,9 @@ clean:
 cleanproto:
 	-@rm -r ./internal/genproto 2>/dev/null || true
 
+.PHONY: cleanall
+cleanall: clean cleanproto
+
 .PHONY: compile
 compile: build run
 

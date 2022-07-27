@@ -12,7 +12,7 @@ import (
 )
 
 func TestNewServer(t *testing.T) {
-	server := NewServer()
+	server := NewServer(nil)
 	if server == nil {
 		t.Error("Expected pointer to initialized HTTPServer, got nil instead")
 	}
@@ -28,7 +28,7 @@ func TestNewServer(t *testing.T) {
 }
 
 func TestSet(t *testing.T) {
-	server := NewServer()
+	server := NewServer(nil)
 
 	testCases := []struct {
 		name         string
@@ -80,7 +80,7 @@ func TestSet(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	server := NewServer()
+	server := NewServer(nil)
 
 	testCases := []struct {
 		name          string
@@ -139,7 +139,7 @@ func TestGet(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	server := NewServer()
+	server := NewServer(nil)
 	server.cache.Set("key1", []byte("10"))
 	server.cache.Set("key2", []byte("20"))
 	server.cache.Set("key3", []byte("30"))
@@ -159,7 +159,7 @@ func TestDelete(t *testing.T) {
 }
 
 func TestPurge(t *testing.T) {
-	server := NewServer()
+	server := NewServer(nil)
 	server.cache.Set("key1", []byte("10"))
 	server.cache.Set("key2", []byte("20"))
 	server.cache.Set("key3", []byte("30"))
@@ -177,7 +177,7 @@ func TestPurge(t *testing.T) {
 }
 
 func TestLength(t *testing.T) {
-	server := NewServer()
+	server := NewServer(nil)
 	server.cache.Set("key1", []byte("10"))
 	server.cache.Set("key2", []byte("20"))
 	server.cache.Set("key3", []byte("30"))
@@ -205,7 +205,7 @@ func TestLength(t *testing.T) {
 }
 
 func TestPing(t *testing.T) {
-	server := NewServer()
+	server := NewServer(nil)
 	res, err := sendRequest("GET", "/PING", nil, server)
 	if err != nil {
 		t.Errorf("Failed to send request: %v", err)

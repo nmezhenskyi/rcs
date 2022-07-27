@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	httpServer := httpsrv.NewServer()
+	httpServer := httpsrv.NewServer(nil)
 	log.Println("--- RCS: Start ---")
 
 	if err := httpServer.ListenAndServe("localhost:5000"); err != nil {

@@ -11,7 +11,7 @@ import (
 )
 
 func TestNewServer(t *testing.T) {
-	server := NewServer()
+	server := NewServer(nil)
 	if server == nil {
 		t.Error("Expected pointer to initialized GRPCServer, got nil instead")
 	}
@@ -24,7 +24,7 @@ func TestNewServer(t *testing.T) {
 }
 
 func TestSet(t *testing.T) {
-	server := NewServer()
+	server := NewServer(nil)
 	serverAddr := "localhost:5001"
 	go func() {
 		if err := server.ListenAndServe(serverAddr); err != nil {
@@ -80,7 +80,7 @@ func TestSet(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	server := NewServer()
+	server := NewServer(nil)
 	serverAddr := "localhost:5001"
 	go func() {
 		if err := server.ListenAndServe(serverAddr); err != nil {
@@ -130,7 +130,7 @@ func TestGet(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	server := NewServer()
+	server := NewServer(nil)
 	serverAddr := "localhost:5001"
 	server.cache.Set("key1", []byte("10"))
 	server.cache.Set("key2", []byte("20"))
@@ -160,7 +160,7 @@ func TestDelete(t *testing.T) {
 }
 
 func TestPurge(t *testing.T) {
-	server := NewServer()
+	server := NewServer(nil)
 	serverAddr := "localhost:5001"
 	server.cache.Set("key1", []byte("10"))
 	server.cache.Set("key2", []byte("20"))
@@ -189,7 +189,7 @@ func TestPurge(t *testing.T) {
 }
 
 func TestLength(t *testing.T) {
-	server := NewServer()
+	server := NewServer(nil)
 	serverAddr := "localhost:5001"
 	server.cache.Set("key1", []byte("10"))
 	server.cache.Set("key2", []byte("20"))
@@ -221,7 +221,7 @@ func TestLength(t *testing.T) {
 }
 
 func TestPing(t *testing.T) {
-	server := NewServer()
+	server := NewServer(nil)
 	serverAddr := "localhost:5001"
 	server.cache.Set("key1", []byte("10"))
 	server.cache.Set("key2", []byte("20"))

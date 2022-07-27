@@ -1,11 +1,27 @@
 {
    "native": {
-      
-   },
-   "http": {
-
+      "activate": true,
+      "port": 5000,
+      "onLocalhost": true,
+      "tls": false,
+      "certFile": "",
+      "keyFile": ""
    },
    "grpc": {
-
-   }
+      "activate": true,
+      "port": 5001,
+      "onLocalhost": true,
+      "tls": false,
+      "certFile": "",
+      "keyFile": ""
+   },
+   "http": {
+      "activate": true,
+      "port": 5002,
+      "onLocalhost": true,
+      "tls": false,
+      "certFile": "",
+      "keyFile": ""
+   },
+   "verbosity": "prod"
 }

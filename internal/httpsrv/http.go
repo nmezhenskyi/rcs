@@ -19,7 +19,10 @@ type Server struct {
 
 // --- Public API: --- //
 
-func NewServer() *Server {
+func NewServer(c *cache.CacheMap) *Server {
+	if c == nil {
+		c = cache.NewCacheMap()
+	}
 	s := &Server{
 		router: httprouter.New(),
 		server: &http.Server{
@@ -34,7 +37,7 @@ func NewServer() *Server {
 				},
 			},
 		},
-		cache: cache.NewCacheMap(),
+		cache: c,
 	}
 	s.server.Handler = s.router
 	s.setupRoutes()

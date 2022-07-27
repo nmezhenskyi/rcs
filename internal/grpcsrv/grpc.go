@@ -18,11 +18,14 @@ type Server struct {
 
 // --- Public API: --- //
 
-func NewServer(opts ...grpc.ServerOption) *Server {
+func NewServer(c *cache.CacheMap, opts ...grpc.ServerOption) *Server {
+	if c == nil {
+		c = cache.NewCacheMap()
+	}
 	s := grpc.NewServer(opts...)
 	grpcServer := &Server{
 		server: s,
-		cache:  cache.NewCacheMap(),
+		cache:  c,
 	}
 	pb.RegisterCacheServiceServer(s, grpcServer)
 	return grpcServer

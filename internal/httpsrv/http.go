@@ -5,16 +5,20 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/nmezhenskyi/rcs/internal/cache"
+	"github.com/rs/zerolog"
 )
 
 type Server struct {
 	server *http.Server
 	router *httprouter.Router
 	cache  *cache.CacheMap
+
+	Logger zerolog.Logger // By defaut Logger is disabled, but can be manually attached.
 }
 
 // --- Public API: --- //
@@ -37,7 +41,8 @@ func NewServer(c *cache.CacheMap) *Server {
 				},
 			},
 		},
-		cache: c,
+		cache:  c,
+		Logger: zerolog.New(os.Stderr).Level(zerolog.Disabled),
 	}
 	s.server.Handler = s.router
 	s.setupRoutes()
@@ -50,20 +55,44 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) ListenAndServe(addr string) error {
 	s.server.Addr = addr
-	return s.server.ListenAndServe()
+	s.Logger.Info().Msg("Starting http server on " + addr)
+	err := s.server.ListenAndServe()
+	if err != nil && err != http.ErrServerClosed {
+		s.Logger.Error().Err(err).Msg("http server failed")
+	}
+	return err
 }
 
 func (s *Server) ListenAndServeTLS(addr, certFile, keyFile string) error {
 	s.server.Addr = addr
-	return s.server.ListenAndServeTLS(certFile, keyFile)
+	s.Logger.Info().Msg("Starting tls http server on " + addr)
+	err := s.server.ListenAndServeTLS(certFile, keyFile)
+	if err != nil && err != http.ErrServerClosed {
+		s.Logger.Error().Err(err).Msg("http server failed")
+	}
+	return err
 }
 
 func (s *Server) Shutdown(ctx context.Context) error {
-	return s.server.Shutdown(ctx)
+	err := s.server.Shutdown(ctx)
+	if err != nil {
+		s.Logger.Error().Err(err).Msg("http server shutdown failed")
+	} else {
+		s.Logger.Info().Msg("http server has been shutdown")
+	}
+	return err
 }
 
 func (s *Server) Close() error {
-	return s.server.Close()
+	err := s.server.Close()
+	if err != nil {
+		s.Logger.Error().Err(err).Msg("http server has been closed & returned error")
+	} else {
+		s.Logger.Info().Msg("http server has been closed")
+
+		s.Logger.With().Str("", "")
+	}
+	return err
 }
 
 // --- Private: --- //
@@ -82,6 +111,8 @@ func (s *Server) handleSet() httprouter.Handle {
 		Value string `json:"value"`
 	}
 	return func(w http.ResponseWriter, req *http.Request, p httprouter.Params) {
+		s.Logger.Debug().Msg("received http PUT \"/SET/:key\" request")
+
 		key := p.ByName("key")
 		if key == "" {
 			sendBadRequest(w, "SET", "Key cannot be an empty string")
@@ -111,6 +142,8 @@ func (s *Server) handleSet() httprouter.Handle {
 
 func (s *Server) handleGet() httprouter.Handle {
 	return func(w http.ResponseWriter, _ *http.Request, p httprouter.Params) {
+		s.Logger.Debug().Msg("received http GET \"/GET/:key\" request")
+
 		key := p.ByName("key")
 		if key == "" {
 			sendBadRequest(w, "GET", "Key cannot be an empty string")
@@ -131,6 +164,8 @@ func (s *Server) handleGet() httprouter.Handle {
 
 func (s *Server) handleDelete() httprouter.Handle {
 	return func(w http.ResponseWriter, _ *http.Request, p httprouter.Params) {
+		s.Logger.Debug().Msg("received http DELETE \"/DELETE/:key\" request")
+
 		key := p.ByName("key")
 		if key == "" {
 			sendBadRequest(w, "DELETE", "Key cannot be an empty string")
@@ -150,6 +185,7 @@ func (s *Server) handleDelete() httprouter.Handle {
 
 func (s *Server) handlePurge() httprouter.Handle {
 	return func(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
+		s.Logger.Debug().Msg("received http DELETE \"/PURGE\" request")
 		s.cache.Purge()
 		res := httpResponse{
 			Command: "FLUSH",
@@ -161,6 +197,7 @@ func (s *Server) handlePurge() httprouter.Handle {
 
 func (s *Server) handleLength() httprouter.Handle {
 	return func(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
+		s.Logger.Debug().Msg("received http GET \"/LENGTH\" request")
 		length := s.cache.Length()
 		res := httpResponse{
 			Command: "LENGTH",
@@ -173,6 +210,7 @@ func (s *Server) handleLength() httprouter.Handle {
 
 func (s *Server) handlePing() httprouter.Handle {
 	return func(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
+		s.Logger.Debug().Msg("received http GET \"/PING\" request")
 		sendJSON(w, 200, httpResponse{Command: "PING", Message: "PONG", Ok: true})
 	}
 }

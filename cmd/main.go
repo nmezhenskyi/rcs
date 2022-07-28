@@ -40,8 +40,7 @@ func main() {
 			With().Timestamp().Logger().Level(zerolog.DebugLevel).
 			Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	case "none":
-		logger = zerolog.New(os.Stderr).
-			With().Timestamp().Logger().Level(zerolog.Disabled)
+		logger = zerolog.New(os.Stderr).Level(zerolog.Disabled)
 	}
 
 	logger.Info().Msg("--- RCS Started ---")

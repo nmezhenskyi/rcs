@@ -1,8 +1,9 @@
 # RCS
 
 RCS, which stands for Remote Caching Server, is an in-memory key-value data store written in Go.
-It is designed to be used in distributed systems. However, RCS is not meant to be used in
-production grade systems. This project was primarily created for fun and inspired by Memcached.
+It is designed to be used in distributed systems. RCS prioritizes versatility over efficiency.
+It provides 3 diffent APIs: HTTP, GRPC, and the native one. This project was primarily created
+out of curiosity and inspired by Memcached.
 
 ## API
 
@@ -13,6 +14,10 @@ In progress...
 In progress...
 
 ## How To Build
+
+In progress...
+
+## How To Run
 
 In progress...
 

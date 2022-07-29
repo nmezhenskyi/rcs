@@ -19,8 +19,9 @@ message SetRequest {
 }
 
 message SetReply {
-   string key = 1;
-   bool ok = 2;
+   bool ok = 1;
+   string message = 2;
+   string key = 3;
 }
 
 message GetRequest {
@@ -28,9 +29,10 @@ message GetRequest {
 }
 
 message GetReply {
-   string key = 1;
-   bytes value = 2;
-   bool ok = 3;
+   bool ok = 1;
+   string message = 2;
+   string key = 3;
+   bytes value = 4;
 }
 
 message DeleteRequest {
@@ -38,28 +40,29 @@ message DeleteRequest {
 }
 
 message DeleteReply {
-   string key = 1;
-   bool ok = 2;
+   bool ok = 1;
+   string message = 2;
+   string key = 3;
 }
 
 message PurgeRequest {}
 
 message PurgeReply {
    bool ok = 1;
+   string message = 2;
 }
 
 message LengthRequest {}
 
 message LengthReply {
-   int64 length = 1;
-   bool ok = 2;
+   bool ok = 1;
+   string message = 2;
+   int64 length = 3;
 }
 
-message PingRequest {
-   string message = 1;
-}
+message PingRequest {}
 
 message PingReply {
-   string message = 1;
-   bool ok = 2;
+   bool ok = 1;
+   string message = 2;
 }

@@ -115,7 +115,7 @@ func (s *Server) handleSet() httprouter.Handle {
 
 		key := p.ByName("key")
 		if key == "" {
-			sendBadRequest(w, "SET", "Key cannot be an empty string")
+			sendBadRequest(w, "SET", "Key cannot be empty")
 			return
 		}
 		reqData := request{}
@@ -146,7 +146,7 @@ func (s *Server) handleGet() httprouter.Handle {
 
 		key := p.ByName("key")
 		if key == "" {
-			sendBadRequest(w, "GET", "Key cannot be an empty string")
+			sendBadRequest(w, "GET", "Key cannot be empty")
 			return
 		}
 
@@ -168,7 +168,7 @@ func (s *Server) handleDelete() httprouter.Handle {
 
 		key := p.ByName("key")
 		if key == "" {
-			sendBadRequest(w, "DELETE", "Key cannot be an empty string")
+			sendBadRequest(w, "DELETE", "Key cannot be empty")
 			return
 		}
 

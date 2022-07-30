@@ -3,9 +3,11 @@ package grpcsrv
 import (
 	"context"
 	"net"
+	"os"
 
 	"github.com/nmezhenskyi/rcs/internal/cache"
 	pb "github.com/nmezhenskyi/rcs/internal/genproto"
+	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
 )
 
@@ -14,6 +16,8 @@ type Server struct {
 
 	server *grpc.Server
 	cache  *cache.CacheMap
+
+	Logger zerolog.Logger // By defaut Logger is disabled, but can be manually attached.
 }
 
 // --- Public API: --- //
@@ -26,6 +30,7 @@ func NewServer(c *cache.CacheMap, opts ...grpc.ServerOption) *Server {
 	grpcServer := &Server{
 		server: s,
 		cache:  c,
+		Logger: zerolog.New(os.Stderr).Level(zerolog.Disabled),
 	}
 	pb.RegisterCacheServiceServer(s, grpcServer)
 	return grpcServer
@@ -35,10 +40,10 @@ func (s *Server) Set(ctx context.Context, in *pb.SetRequest) (*pb.SetReply, erro
 	key := in.GetKey()
 	value := in.GetValue()
 	if len(key) == 0 {
-		return &pb.SetReply{Key: key, Ok: false}, nil
+		return &pb.SetReply{Key: key, Ok: false, Message: "Key cannot be empty"}, nil
 	}
 	if len(value) == 0 {
-		return &pb.SetReply{Key: key, Ok: false}, nil
+		return &pb.SetReply{Key: key, Ok: false, Message: "Value cannot be empty"}, nil
 	}
 	s.cache.Set(key, value)
 	return &pb.SetReply{Key: key, Ok: true}, nil
@@ -47,16 +52,19 @@ func (s *Server) Set(ctx context.Context, in *pb.SetRequest) (*pb.SetReply, erro
 func (s *Server) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
 	key := in.GetKey()
 	if len(key) == 0 {
-		return &pb.GetReply{Key: key, Ok: false}, nil
+		return &pb.GetReply{Key: key, Ok: false, Message: "Key cannot be empty"}, nil
 	}
 	value, ok := s.cache.Get(key)
+	if !ok {
+		return &pb.GetReply{Key: key, Value: value, Ok: ok, Message: "Value not found"}, nil
+	}
 	return &pb.GetReply{Key: key, Value: value, Ok: ok}, nil
 }
 
 func (s *Server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.DeleteReply, error) {
 	key := in.GetKey()
 	if len(key) == 0 {
-		return &pb.DeleteReply{Key: key, Ok: false}, nil
+		return &pb.DeleteReply{Key: key, Ok: false, Message: "Key cannot be empty"}, nil
 	}
 	s.cache.Delete(key)
 	return &pb.DeleteReply{Key: key, Ok: true}, nil

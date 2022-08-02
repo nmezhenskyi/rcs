@@ -1,9 +1,10 @@
 package nativesrv
 
 import (
-	"fmt"
+	"bytes"
 	"net"
 	"os"
+	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -17,8 +18,6 @@ const (
 )
 
 // Server implements RCS Native TCP Protocol.
-//
-// Accepts only TCP connections.
 type Server struct {
 	cache *cache.CacheMap
 
@@ -26,7 +25,7 @@ type Server struct {
 
 	mu          sync.Mutex
 	listener    *srvListener
-	activeConns map[*net.TCPConn]struct{}
+	activeConns map[net.Conn]struct{}
 
 	Logger zerolog.Logger // By defaut Logger is disabled, but can be manually attached.
 }
@@ -39,7 +38,7 @@ func NewServer(c *cache.CacheMap) *Server {
 	}
 	return &Server{
 		cache:       c,
-		activeConns: make(map[*net.TCPConn]struct{}),
+		activeConns: make(map[net.Conn]struct{}),
 		Logger:      zerolog.New(os.Stderr).Level(zerolog.Disabled),
 	}
 }
@@ -81,21 +80,15 @@ func (s *Server) serve(lis net.Listener) error {
 	s.listener = lis.(*srvListener)
 	s.mu.Unlock()
 	for {
-		newConn, err := lis.Accept()
+		conn, err := lis.Accept()
 		if err != nil {
 			s.Logger.Error().Err(err).Msg("failed to accept connection")
 			continue
 		}
-		tcpConn, ok := newConn.(*net.TCPConn)
-		if !ok {
-			s.Logger.Info().Msg(fmt.Sprintf("rejected \"%s\" connection (%s)",
-				newConn.RemoteAddr().String(), newConn.RemoteAddr().Network()))
-			continue
-		}
 		s.mu.Lock()
-		s.activeConns[tcpConn] = struct{}{}
+		s.activeConns[conn] = struct{}{}
 		s.mu.Unlock()
-		go s.handleConnection(tcpConn)
+		go s.handleConnection(conn)
 	}
 }
 
@@ -109,7 +102,37 @@ func (s *Server) handleConnection(conn net.Conn) {
 			s.Logger.Error().Err(err).Msg("connection read error")
 			return
 		}
-		// TODO: parse message, process, send response
+
+		tokens := bytes.SplitN(buf[:n], []byte("\r\n"), 4)
+		if len(tokens) == 0 {
+			conn.Write([]byte("RCSP/1.0 NOT_OK\r\nMESSAGE: Bad request\r\n"))
+			continue
+		}
+		headerTokens := bytes.Split(tokens[0], []byte(" "))
+		if len(headerTokens) != 2 || bytes.Compare(headerTokens[0], []byte("RCSP/1.0")) != 0 {
+			conn.Write([]byte("RCSP/1.0 NOT_OK\r\nMESSAGE: Unknown protocol, expected RCSP/1.0\r\n"))
+			continue
+		}
+
+		command := strings.TrimSuffix(string(headerTokens[1]), "\r\n")
+		switch command {
+		case "GET":
+
+		case "SET":
+
+		case "DELETE":
+
+		case "PURGE":
+
+		case "LENGTH":
+
+		case "KEYS":
+
+		case "PING":
+			conn.Write([]byte("RCSP/1.0 PING OK\r\n"))
+		default:
+			conn.Write([]byte("RCSP/1.0 NOT_OK\r\nMESSAGE: Bad request\r\n"))
+		}
 	}
 }
 

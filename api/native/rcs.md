@@ -151,3 +151,10 @@ RCSP/1.0 PING OK\r\n
 RCSP/1.0 PING NOT_OK\r\n
 MESSAGE: <msg>\r\n
 ```
+
+### Generic Error Response
+
+```
+RCSP/1.0 NOT_OK\r\n
+MESSAGE: <msg>\r\n
+```

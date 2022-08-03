@@ -49,6 +49,12 @@ RCSP/1.0 KEYS\r\n
 RCSP/1.0 PING\r\n
 ```
 
+### CLOSE
+
+```
+RCSP/1.0 CLOSE\r\n
+```
+
 ## Responses
 
 ### SET OK
@@ -150,6 +156,18 @@ RCSP/1.0 PING OK\r\n
 ```
 RCSP/1.0 PING NOT_OK\r\n
 MESSAGE: <msg>\r\n
+```
+
+### CLOSE OK
+
+```
+RCSP/1.0 CLOSE OK\r\n
+```
+
+### CLOSE NOT_OK
+
+```
+RCSP/1.0 CLOSE NOT_OK\r\n
 ```
 
 ### Generic Error Response

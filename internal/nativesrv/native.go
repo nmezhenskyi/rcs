@@ -60,15 +60,21 @@ func (s *Server) Shutdown() {
 
 }
 
-func (s *Server) Close() {
+func (s *Server) Close() error {
 	s.inShutdown.setTrue()
+	err := s.listener.Close()
+	if err != nil {
+		s.Logger.Error().Err(err).Msg("underlying tcp listener errored while closing")
+	}
+
 	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.listener.Close()
 	for c := range s.activeConns {
 		c.Close()
 		delete(s.activeConns, c)
 	}
+	s.mu.Unlock()
+
+	return err
 }
 
 // --- Private: --- //
@@ -93,8 +99,14 @@ func (s *Server) serve(lis net.Listener) error {
 }
 
 func (s *Server) handleConnection(conn net.Conn) {
-	defer conn.Close()
+	defer func() {
+		conn.Close()
+		s.mu.Lock()
+		delete(s.activeConns, conn)
+		s.mu.Unlock()
+	}()
 
+MsgLoop:
 	for {
 		buf := make([]byte, DefaultMessageSize)
 		n, err := conn.Read(buf)
@@ -103,9 +115,9 @@ func (s *Server) handleConnection(conn net.Conn) {
 			return
 		}
 
-		tokens := bytes.SplitN(buf[:n], []byte("\r\n"), 4)
+		tokens := bytes.SplitN(buf[:n], []byte("\r\n"), 3)
 		if len(tokens) == 0 {
-			conn.Write([]byte("RCSP/1.0 NOT_OK\r\nMESSAGE: Bad request\r\n"))
+			conn.Write([]byte("RCSP/1.0 NOT_OK\r\nMESSAGE: Malformed request\r\n"))
 			continue
 		}
 		headerTokens := bytes.Split(tokens[0], []byte(" "))
@@ -116,9 +128,22 @@ func (s *Server) handleConnection(conn net.Conn) {
 
 		command := strings.TrimSuffix(string(headerTokens[1]), "\r\n")
 		switch command {
-		case "GET":
-
 		case "SET":
+			if len(tokens) != 3 {
+				conn.Write([]byte("RCSP/1.0 SET NOT_OK\r\nMESSAGE: Key and/or value are missing\r\n"))
+				continue MsgLoop
+			}
+			keyTokens := bytes.SplitN(tokens[1], []byte(": "), 2)
+			valueTokens := bytes.SplitN(tokens[2], []byte(": "), 2)
+			if len(keyTokens) != 2 || len(valueTokens) != 2 {
+				conn.Write([]byte("RCSP/1.0 SET NOT_OK\r\nMESSAGE: Invalid key and/or value format\r\n"))
+				continue MsgLoop
+			}
+			s.cache.Set(string(keyTokens[1]), valueTokens[1])
+			response := append([]byte("RCSP/1.0 SET OK\r\nKEY: "), keyTokens[1]...)
+			response = append(response, []byte("\r\n")...)
+			conn.Write(response)
+		case "GET":
 
 		case "DELETE":
 
@@ -130,8 +155,11 @@ func (s *Server) handleConnection(conn net.Conn) {
 
 		case "PING":
 			conn.Write([]byte("RCSP/1.0 PING OK\r\n"))
+		case "CLOSE":
+			conn.Write([]byte("RCSP/1.0 CLOSE OK\r\n"))
+			break MsgLoop
 		default:
-			conn.Write([]byte("RCSP/1.0 NOT_OK\r\nMESSAGE: Bad request\r\n"))
+			conn.Write([]byte("RCSP/1.0 NOT_OK\r\nMESSAGE: Malformed request\r\n"))
 		}
 	}
 }

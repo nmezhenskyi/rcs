@@ -108,6 +108,8 @@ func (s *Server) handleConnection(conn net.Conn) {
 
 MsgLoop:
 	for {
+		var resp = response{}
+
 		buf := make([]byte, DefaultMessageSize)
 		n, err := conn.Read(buf)
 		if n == 0 || err != nil {
@@ -129,6 +131,7 @@ MsgLoop:
 		command := strings.TrimSuffix(string(headerTokens[1]), "\r\n")
 		switch command {
 		case "SET":
+			resp.command = []byte("SET")
 			if len(tokens) != 3 {
 				conn.Write([]byte("RCSP/1.0 SET NOT_OK\r\nMESSAGE: Key and/or value are missing\r\n"))
 				continue MsgLoop
@@ -144,23 +147,25 @@ MsgLoop:
 			response = append(response, []byte("\r\n")...)
 			conn.Write(response)
 		case "GET":
+			resp.command = []byte("GET")
 			if len(tokens) != 2 {
-				conn.Write([]byte("RCSP/1.0 SET NOT_OK\r\nMESSAGE: Key is missing\r\n"))
+				resp.ok = false
+				resp.message = []byte("Key is missing")
+				resp.write(conn)
 				continue MsgLoop
 			}
 			keyTokens := bytes.SplitN(tokens[1], []byte(": "), 2)
 			if len(keyTokens) != 2 {
-				conn.Write([]byte("RCSP/1.0 SET NOT_OK\r\nMESSAGE: Invalid key format\r\n"))
+				resp.ok = false
+				resp.message = []byte("Invalid key format")
+				resp.write(conn)
 				continue MsgLoop
 			}
 			val, ok := s.cache.Get(string(keyTokens[1]))
-			resp := response{
-				command: "SET",
-				ok:      ok,
-				key:     keyTokens[1],
-				value:   val,
-			}
-			resp.write(conn, resp)
+			resp.ok = ok
+			resp.key = keyTokens[1]
+			resp.value = val
+			resp.write(conn)
 		case "DELETE":
 
 		case "PURGE":
@@ -187,34 +192,37 @@ func (s *Server) shuttingDown() bool {
 // --- Helpers: --- //
 
 type response struct {
-	command string
+	command []byte
 	ok      bool
-	message string
+	message []byte
 	key     []byte
 	value   []byte
 }
 
-func (r response) write(conn net.Conn, resp response) {
-	msg := []byte("RCSP/1.0 ")
-	msg = append(msg, []byte(resp.command)...)
-	if resp.ok {
+func (r response) write(conn net.Conn) {
+	msg := []byte("RCSP/1.0")
+	if r.command != nil {
+		msg = append(msg, ' ')
+		msg = append(msg, r.command...)
+	}
+	if r.ok {
 		msg = append(msg, []byte(" OK\r\n")...)
 	} else {
 		msg = append(msg, []byte(" NOT_OK\r\n")...)
 	}
-	if resp.message != "" {
+	if r.message != nil {
 		msg = append(msg, []byte("MESSAGE: ")...)
-		msg = append(msg, []byte(resp.message)...)
+		msg = append(msg, r.message...)
 		msg = append(msg, []byte("\r\n")...)
 	}
-	if resp.key != nil {
+	if r.key != nil {
 		msg = append(msg, []byte("KEY: ")...)
-		msg = append(msg, resp.key...)
+		msg = append(msg, r.key...)
 		msg = append(msg, []byte("\r\n")...)
 	}
-	if resp.value != nil {
+	if r.value != nil {
 		msg = append(msg, []byte("VALUE: ")...)
-		msg = append(msg, resp.value...)
+		msg = append(msg, r.value...)
 		msg = append(msg, []byte("\r\n")...)
 	}
 	conn.Write(msg)

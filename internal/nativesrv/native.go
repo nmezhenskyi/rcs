@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -133,19 +134,24 @@ MsgLoop:
 		case "SET":
 			resp.command = []byte("SET")
 			if len(tokens) != 3 {
-				conn.Write([]byte("RCSP/1.0 SET NOT_OK\r\nMESSAGE: Key and/or value are missing\r\n"))
+				resp.ok = false
+				resp.message = []byte("Key and/or value are missing")
+				resp.write(conn)
 				continue MsgLoop
 			}
 			keyTokens := bytes.SplitN(tokens[1], []byte(": "), 2)
 			valueTokens := bytes.SplitN(tokens[2], []byte(": "), 2)
 			if len(keyTokens) != 2 || len(valueTokens) != 2 {
-				conn.Write([]byte("RCSP/1.0 SET NOT_OK\r\nMESSAGE: Invalid key and/or value format\r\n"))
+				resp.ok = false
+				resp.message = []byte("Invalid key and/or value format")
+				resp.write(conn)
 				continue MsgLoop
 			}
-			s.cache.Set(string(keyTokens[1]), valueTokens[1])
-			response := append([]byte("RCSP/1.0 SET OK\r\nKEY: "), keyTokens[1]...)
-			response = append(response, []byte("\r\n")...)
-			conn.Write(response)
+			key := strings.TrimSuffix(string(keyTokens[1]), "\r\n")
+			s.cache.Set(key, valueTokens[1])
+			resp.ok = true
+			resp.key = []byte(key)
+			resp.write(conn)
 		case "GET":
 			resp.command = []byte("GET")
 			if len(tokens) != 2 {
@@ -161,7 +167,7 @@ MsgLoop:
 				resp.write(conn)
 				continue MsgLoop
 			}
-			val, ok := s.cache.Get(string(keyTokens[1]))
+			val, ok := s.cache.Get(strings.TrimSuffix(string(keyTokens[1]), "\r\n"))
 			resp.ok = ok
 			resp.key = keyTokens[1]
 			resp.value = val
@@ -171,13 +177,21 @@ MsgLoop:
 		case "PURGE":
 
 		case "LENGTH":
-
+			length := s.cache.Length()
+			resp.command = []byte("LENGTH")
+			resp.ok = true
+			resp.value = []byte(strconv.Itoa(length))
+			resp.write(conn)
 		case "KEYS":
 
 		case "PING":
-			conn.Write([]byte("RCSP/1.0 PING OK\r\n"))
+			resp.command = []byte("PING")
+			resp.ok = true
+			resp.write(conn)
 		case "CLOSE":
-			conn.Write([]byte("RCSP/1.0 CLOSE OK\r\n"))
+			resp.command = []byte("CLOSE")
+			resp.ok = true
+			resp.write(conn)
 			break MsgLoop
 		default:
 			conn.Write([]byte("RCSP/1.0 NOT_OK\r\nMESSAGE: Malformed request\r\n"))

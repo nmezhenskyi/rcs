@@ -1,5 +1,8 @@
 .vscode
 .DS_Store
+.gitignore
+.git
+api/
 bin/
 vendor/
 examples/

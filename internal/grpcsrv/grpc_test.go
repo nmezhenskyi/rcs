@@ -13,13 +13,13 @@ import (
 func TestNewServer(t *testing.T) {
 	server := NewServer(nil)
 	if server == nil {
-		t.Error("Expected pointer to initialized GRPCServer, got nil instead")
+		t.Error("Expected pointer to initialized Server, got nil instead")
 	}
 	if server.server == nil {
-		t.Error("GRPCServer.server has not been initialized")
+		t.Error("Server.server has not been initialized")
 	}
 	if server.cache == nil {
-		t.Error("GRPCServer.cache has not been initialized")
+		t.Error("Server.cache has not been initialized")
 	}
 }
 
@@ -28,7 +28,7 @@ func TestSet(t *testing.T) {
 	serverAddr := "localhost:5001"
 	go func() {
 		if err := server.ListenAndServe(serverAddr); err != nil {
-			t.Errorf("GRPC server failed: %v", err)
+			t.Errorf("Server failed: %v", err)
 		}
 	}()
 	client, conn := newTestClient(serverAddr, t)
@@ -84,7 +84,7 @@ func TestGet(t *testing.T) {
 	serverAddr := "localhost:5001"
 	go func() {
 		if err := server.ListenAndServe(serverAddr); err != nil {
-			t.Errorf("GRPC server failed: %v", err)
+			t.Errorf("Server failed: %v", err)
 		}
 	}()
 	client, conn := newTestClient(serverAddr, t)
@@ -137,7 +137,7 @@ func TestDelete(t *testing.T) {
 	server.cache.Set("key3", []byte("30"))
 	go func() {
 		if err := server.ListenAndServe(serverAddr); err != nil {
-			t.Errorf("GRPC server failed: %v", err)
+			t.Errorf("Server failed: %v", err)
 		}
 	}()
 	client, conn := newTestClient(serverAddr, t)
@@ -167,7 +167,7 @@ func TestPurge(t *testing.T) {
 	server.cache.Set("key3", []byte("30"))
 	go func() {
 		if err := server.ListenAndServe(serverAddr); err != nil {
-			t.Errorf("GRPC server failed: %v", err)
+			t.Errorf("Server failed: %v", err)
 		}
 	}()
 	client, conn := newTestClient(serverAddr, t)
@@ -198,7 +198,7 @@ func TestLength(t *testing.T) {
 	server.cache.Set("key5", []byte("50"))
 	go func() {
 		if err := server.ListenAndServe(serverAddr); err != nil {
-			t.Errorf("GRPC server failed: %v", err)
+			t.Errorf("Server failed: %v", err)
 		}
 	}()
 	client, conn := newTestClient(serverAddr, t)
@@ -228,7 +228,7 @@ func TestPing(t *testing.T) {
 	server.cache.Set("key3", []byte("30"))
 	go func() {
 		if err := server.ListenAndServe(serverAddr); err != nil {
-			t.Errorf("GRPC server failed: %v", err)
+			t.Errorf("Server failed: %v", err)
 		}
 	}()
 	client, conn := newTestClient(serverAddr, t)
@@ -251,7 +251,7 @@ func newTestClient(serverAddr string, t *testing.T) (pb.CacheServiceClient, *grp
 	var opts = []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	conn, err := grpc.Dial(serverAddr, opts...)
 	if err != nil {
-		t.Errorf("Failed to connect to the GRPC server: %v", err)
+		t.Errorf("Failed to connect to the server: %v", err)
 	}
 	client := pb.NewCacheServiceClient(conn)
 	return client, conn

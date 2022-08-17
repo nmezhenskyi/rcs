@@ -14,16 +14,16 @@ import (
 func TestNewServer(t *testing.T) {
 	server := NewServer(nil)
 	if server == nil {
-		t.Error("Expected pointer to initialized HTTPServer, got nil instead")
+		t.Error("Expected pointer to initialized Server, got nil instead")
 	}
 	if server.server == nil {
-		t.Error("HTTPServer.server has not been initialized")
+		t.Error("Server.server has not been initialized")
 	}
 	if server.router == nil {
-		t.Error("HTTPServer.router has not been initialized")
+		t.Error("Server.router has not been initialized")
 	}
 	if server.cache == nil {
-		t.Error("HTTPServer.cache has not been initialized")
+		t.Error("Server.cache has not been initialized")
 	}
 }
 

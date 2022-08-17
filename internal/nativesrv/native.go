@@ -242,6 +242,40 @@ func (r response) write(conn net.Conn) {
 	conn.Write(msg)
 }
 
+func parseResponse(msg []byte) (response, error) {
+	return response{}, nil
+}
+
+type request struct {
+	command []byte
+	key     []byte
+	value   []byte
+}
+
+func (r request) write(conn net.Conn) {
+	msg := []byte("RCSP/1.0")
+	if r.command != nil {
+		msg = append(msg, ' ')
+		msg = append(msg, r.command...)
+		msg = append(msg, []byte("\r\n")...)
+	}
+	if r.key != nil {
+		msg = append(msg, []byte("KEY: ")...)
+		msg = append(msg, r.key...)
+		msg = append(msg, []byte("\r\n")...)
+	}
+	if r.value != nil {
+		msg = append(msg, []byte("VALUE: ")...)
+		msg = append(msg, r.value...)
+		msg = append(msg, []byte("\r\n")...)
+	}
+	conn.Write(msg)
+}
+
+func parseRequest(msg []byte) (request, error) {
+	return request{}, nil
+}
+
 // srvListener wraps a net.Listener to protect it from multiple Close() calls.
 type srvListener struct {
 	net.Listener

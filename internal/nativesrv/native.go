@@ -1,5 +1,7 @@
 // Package nativesrv implements TCP server that uses RCS Native Protocol (RCSP)
 // as its application layer protocol.
+//
+// See RCSP specification at https://github.com/nmezhenskyi/rcs/blob/main/api/native/rcs.md.
 package nativesrv
 
 import (
@@ -31,8 +33,6 @@ type Server struct {
 
 	Logger zerolog.Logger // By defaut Logger is disabled, but can be manually attached.
 }
-
-// --- Public API: --- //
 
 func NewServer(c *cache.CacheMap) *Server {
 	if c == nil {
@@ -78,8 +78,6 @@ func (s *Server) Close() error {
 
 	return err
 }
-
-// --- Private: --- //
 
 func (s *Server) serve(lis net.Listener) error {
 	lis = &srvListener{Listener: lis}
@@ -208,8 +206,6 @@ MsgLoop:
 func (s *Server) shuttingDown() bool {
 	return s.inShutdown.isSet()
 }
-
-// --- Helpers: --- //
 
 // srvListener wraps a net.Listener to protect it from multiple Close() calls.
 type srvListener struct {

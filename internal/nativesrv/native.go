@@ -7,7 +7,6 @@ import (
 	"net"
 	"os"
 	"strconv"
-	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -136,7 +135,7 @@ MsgLoop:
 			continue
 		}
 
-		command := strings.TrimSuffix(string(headerTokens[1]), "\r\n")
+		command := string(headerTokens[1])
 		switch command {
 		case "SET":
 			resp.command = []byte("SET")
@@ -154,7 +153,7 @@ MsgLoop:
 				resp.write(conn)
 				continue MsgLoop
 			}
-			key := strings.TrimSuffix(string(keyTokens[1]), "\r\n")
+			key := string(keyTokens[1])
 			s.cache.Set(key, valueTokens[1])
 			resp.ok = true
 			resp.key = []byte(key)
@@ -174,7 +173,7 @@ MsgLoop:
 				resp.write(conn)
 				continue MsgLoop
 			}
-			val, ok := s.cache.Get(strings.TrimSuffix(string(keyTokens[1]), "\r\n"))
+			val, ok := s.cache.Get(string(keyTokens[1]))
 			resp.ok = ok
 			resp.key = keyTokens[1]
 			resp.value = val

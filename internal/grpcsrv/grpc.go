@@ -1,3 +1,6 @@
+// Package grpcsrv implements gRPC server.
+//
+// See Protobuf at https://github.com/nmezhenskyi/rcs/blob/main/api/protobuf/rcs.proto.
 package grpcsrv
 
 import (

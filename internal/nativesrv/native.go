@@ -59,7 +59,7 @@ func (s *Server) ListenAndServe(addr string) error {
 }
 
 func (s *Server) Shutdown() {
-
+	// TODO: wait for all active conns to close and then gracefully shutdown the server
 }
 
 func (s *Server) Close() error {

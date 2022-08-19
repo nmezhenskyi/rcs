@@ -137,7 +137,7 @@ func parseResponse(msg []byte) (response, error) {
 		msgLines = msgLines[:linesCount-1]
 	}
 	headerTokens := bytes.Split(msgLines[0], []byte(" "))
-	if len(headerTokens) != 3 {
+	if len(headerTokens) < 2 {
 		return response{}, ErrMalformedResponse
 	}
 	if bytes.Compare(headerTokens[0], []byte("RCSP/1.0")) != 0 {
@@ -149,12 +149,18 @@ func parseResponse(msg []byte) (response, error) {
 		encounteredErr error
 	)
 
-	// Parse Command:
-	parsedResp.command = headerTokens[1]
-	// Parse Ok:
-	if bytes.Compare(headerTokens[2], []byte("OK")) == 0 {
+	okTokenIndex := 2
+	if len(headerTokens) == 2 {
+		// Command is missing, so OK will be the second token in the HEADER line
+		okTokenIndex = 1
+	} else if len(headerTokens) == 3 {
+		parsedResp.command = headerTokens[1]
+	} else {
+		return response{}, ErrMalformedResponse
+	}
+	if bytes.Compare(headerTokens[okTokenIndex], []byte("OK")) == 0 {
 		parsedResp.ok = true
-	} else if bytes.Compare(headerTokens[2], []byte("NOT_OK")) != 0 {
+	} else if bytes.Compare(headerTokens[okTokenIndex], []byte("NOT_OK")) != 0 {
 		encounteredErr = ErrMalformedRequest
 	}
 

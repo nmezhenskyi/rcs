@@ -5,10 +5,10 @@
 package nativesrv
 
 import (
-	"bytes"
 	"net"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -117,69 +117,65 @@ MsgLoop:
 			return
 		}
 
-		// req, err := parseRequest(buf[:n])
-		// if err != nil {
-
-		// }
-
-		tokens := bytes.SplitN(buf[:n], []byte("\r\n"), 3)
-		if len(tokens) == 0 {
-			conn.Write([]byte("RCSP/1.0 NOT_OK\r\nMESSAGE: Malformed request\r\n"))
-			continue
-		}
-		headerTokens := bytes.Split(tokens[0], []byte(" "))
-		if len(headerTokens) != 2 || bytes.Compare(headerTokens[0], []byte("RCSP/1.0")) != 0 {
-			conn.Write([]byte("RCSP/1.0 NOT_OK\r\nMESSAGE: Unknown protocol, expected RCSP/1.0\r\n"))
-			continue
+		req, err := parseRequest(buf[:n])
+		if err != nil {
+			switch err {
+			// TODO: handle errors
+			}
 		}
 
-		command := string(headerTokens[1])
-		switch command {
+		switch string(req.command) {
 		case "SET":
 			resp.command = []byte("SET")
-			if len(tokens) != 3 {
-				resp.ok = false
-				resp.message = []byte("Key and/or value are missing")
-				resp.write(conn)
-				continue MsgLoop
-			}
-			keyTokens := bytes.SplitN(tokens[1], []byte(": "), 2)
-			valueTokens := bytes.SplitN(tokens[2], []byte(": "), 2)
-			if len(keyTokens) != 2 || len(valueTokens) != 2 {
-				resp.ok = false
-				resp.message = []byte("Invalid key and/or value format")
-				resp.write(conn)
-				continue MsgLoop
-			}
-			key := string(keyTokens[1])
-			s.cache.Set(key, valueTokens[1])
-			resp.ok = true
-			resp.key = []byte(key)
-			resp.write(conn)
-		case "GET":
-			resp.command = []byte("GET")
-			if len(tokens) != 2 {
+			if len(req.key) == 0 {
 				resp.ok = false
 				resp.message = []byte("Key is missing")
 				resp.write(conn)
 				continue MsgLoop
 			}
-			keyTokens := bytes.SplitN(tokens[1], []byte(": "), 2)
-			if len(keyTokens) != 2 {
+			if len(req.value) == 0 {
 				resp.ok = false
-				resp.message = []byte("Invalid key format")
+				resp.message = []byte("Value is missing")
 				resp.write(conn)
 				continue MsgLoop
 			}
-			val, ok := s.cache.Get(string(keyTokens[1]))
+			s.cache.Set(string(req.key), req.value)
+			resp.ok = true
+			resp.key = req.key
+			resp.write(conn)
+		case "GET":
+			resp.command = []byte("GET")
+			if len(req.key) == 0 {
+				resp.ok = false
+				resp.message = []byte("Key is missing")
+				resp.write(conn)
+				continue MsgLoop
+			}
+			val, ok := s.cache.Get(string(req.key))
 			resp.ok = ok
-			resp.key = keyTokens[1]
+			resp.key = req.key
 			resp.value = val
+			if !resp.ok {
+				resp.message = []byte("Not found")
+			}
 			resp.write(conn)
 		case "DELETE":
-
+			resp.command = []byte("DELETE")
+			if len(req.key) == 0 {
+				resp.ok = false
+				resp.message = []byte("Key is missing")
+				resp.write(conn)
+				continue MsgLoop
+			}
+			s.cache.Delete(string(req.key))
+			resp.ok = true
+			resp.key = req.key
+			resp.write(conn)
 		case "PURGE":
-
+			s.cache.Purge()
+			resp.command = []byte("PURGE")
+			resp.ok = true
+			resp.write(conn)
 		case "LENGTH":
 			length := s.cache.Length()
 			resp.command = []byte("LENGTH")
@@ -187,7 +183,16 @@ MsgLoop:
 			resp.value = []byte(strconv.Itoa(length))
 			resp.write(conn)
 		case "KEYS":
-
+			resp.command = []byte("KEYS")
+			keys := s.cache.Keys()
+			if len(keys) != 0 {
+				resp.ok = true
+				resp.value = []byte(strings.Join(keys, ","))
+			} else {
+				resp.ok = false
+				resp.message = []byte("No keys")
+			}
+			resp.write(conn)
 		case "PING":
 			resp.command = []byte("PING")
 			resp.ok = true
@@ -198,7 +203,9 @@ MsgLoop:
 			resp.write(conn)
 			break MsgLoop
 		default:
-			conn.Write([]byte("RCSP/1.0 NOT_OK\r\nMESSAGE: Malformed request\r\n"))
+			resp.ok = false
+			resp.message = []byte("Malformed request, invalid command")
+			resp.write(conn)
 		}
 	}
 }

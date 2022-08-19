@@ -40,9 +40,18 @@ func (r request) write(conn net.Conn) {
 }
 
 func parseRequest(msg []byte) (request, error) {
-	msgLines := bytes.SplitN(msg, []byte("\r\n"), 3)
-	if len(msgLines) == 0 {
+	if len(msg) == 0 {
 		return request{}, ErrMalformedRequest
+	}
+
+	msgLines := bytes.SplitN(msg, []byte("\r\n"), 3)
+	linesCount := len(msgLines)
+	if linesCount != 0 && len(msgLines[linesCount-1]) == 0 {
+		msgLines = msgLines[:linesCount-1]
+		linesCount -= 1
+	}
+	if linesCount > 0 {
+		msgLines[linesCount-1] = bytes.TrimSuffix(msgLines[linesCount-1], []byte("\r\n"))
 	}
 	headerTokens := bytes.Split(msgLines[0], []byte(" "))
 	if len(headerTokens) != 2 || bytes.Compare(headerTokens[0], []byte("RCSP/1.0")) != 0 {
@@ -70,9 +79,7 @@ func parseRequest(msg []byte) (request, error) {
 	// Parse Value:
 	if len(msgLines) > 2 {
 		valueTokens := bytes.SplitN(msgLines[2], []byte(": "), 2)
-		if len(valueTokens) != 2 {
-			encounteredErr = ErrInvalidKey
-		} else if bytes.Compare(valueTokens[0], []byte("VALUE")) != 0 {
+		if len(valueTokens) != 2 || bytes.Compare(valueTokens[0], []byte("VALUE")) != 0 {
 			encounteredErr = ErrMalformedRequest
 		} else {
 			parsedReq.value = valueTokens[1]
@@ -120,9 +127,14 @@ func (r response) write(conn net.Conn) {
 }
 
 func parseResponse(msg []byte) (response, error) {
-	msgLines := bytes.SplitN(msg, []byte("\r\n"), 4)
-	if len(msgLines) == 0 {
+	if len(msg) == 0 {
 		return response{}, ErrMalformedResponse
+	}
+
+	msgLines := bytes.SplitN(msg, []byte("\r\n"), 4)
+	linesCount := len(msgLines)
+	if linesCount != 0 && len(msgLines[linesCount-1]) == 0 {
+		msgLines = msgLines[:linesCount-1]
 	}
 	headerTokens := bytes.Split(msgLines[0], []byte(" "))
 	if len(headerTokens) != 3 {
@@ -144,6 +156,26 @@ func parseResponse(msg []byte) (response, error) {
 		parsedResp.ok = true
 	} else if bytes.Compare(headerTokens[2], []byte("NOT_OK")) != 0 {
 		encounteredErr = ErrMalformedRequest
+	}
+
+ParsingLoop:
+	for i := 1; i < len(msgLines); i++ {
+		tokens := bytes.SplitN(msgLines[i], []byte(": "), 2)
+		if len(tokens) != 2 {
+			encounteredErr = ErrMalformedResponse
+			break ParsingLoop
+		}
+		switch string(tokens[0]) {
+		case "MESSAGE":
+			parsedResp.message = tokens[1]
+		case "KEY":
+			parsedResp.key = tokens[1]
+		case "VALUE":
+			parsedResp.value = tokens[1]
+		default:
+			encounteredErr = ErrMalformedResponse
+			break ParsingLoop
+		}
 	}
 
 	return parsedResp, encounteredErr

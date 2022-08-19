@@ -6,10 +6,11 @@ import (
 )
 
 const (
-	ErrMalformedRequest = requestError("malformed request")
-	ErrUnknownProtocol  = requestError("unknown protocol")
-	ErrInvalidKey       = requestError("invalid key")
-	ErrInvalidValue     = requestError("invalid value")
+	ErrMalformedRequest  = messageError("malformed request")
+	ErrMalformedResponse = messageError("malformed response")
+	ErrUnknownProtocol   = messageError("unknown protocol")
+	ErrInvalidKey        = messageError("invalid key")
+	ErrInvalidValue      = messageError("invalid value")
 )
 
 type request struct {
@@ -81,12 +82,6 @@ func parseRequest(msg []byte) (request, error) {
 	return parsedReq, encounteredErr
 }
 
-type requestError string
-
-func (err requestError) Error() string {
-	return string(err)
-}
-
 type response struct {
 	command []byte
 	ok      bool
@@ -125,5 +120,35 @@ func (r response) write(conn net.Conn) {
 }
 
 func parseResponse(msg []byte) (response, error) {
-	return response{}, nil
+	msgLines := bytes.SplitN(msg, []byte("\r\n"), 4)
+	if len(msgLines) == 0 {
+		return response{}, ErrMalformedResponse
+	}
+	headerTokens := bytes.Split(msgLines[0], []byte(" "))
+	if len(headerTokens) != 3 {
+		return response{}, ErrMalformedResponse
+	}
+	if bytes.Compare(headerTokens[0], []byte("RCSP/1.0")) != 0 {
+		return response{}, ErrUnknownProtocol
+	}
+
+	var (
+		parsedResp     response
+		encounteredErr error
+	)
+
+	// Parse Command:
+	parsedResp.command = headerTokens[1]
+	// Parse Ok:
+	if bytes.Compare(headerTokens[2], []byte("OK")) == 0 {
+		parsedResp.ok = true
+	} else if bytes.Compare(headerTokens[2], []byte("NOT_OK")) != 0 {
+		encounteredErr = ErrMalformedRequest
+	}
+
+	return parsedResp, encounteredErr
 }
+
+type messageError string
+
+func (err messageError) Error() string { return string(err) }

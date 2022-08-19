@@ -1,3 +1,6 @@
+// Package httpsrv implements HTTP server that uses JSON payloads for data communication.
+//
+// See OpenAPI specification at https://github.com/nmezhenskyi/rcs/blob/main/api/openapi/rcs.yaml.
 package httpsrv
 
 import (

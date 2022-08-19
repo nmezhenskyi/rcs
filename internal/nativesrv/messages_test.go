@@ -232,6 +232,18 @@ func TestParseResponse(t *testing.T) {
 			},
 			expectedErr: nil,
 		},
+		{
+			name: "Generic error response",
+			msg:  []byte("RCSP/1.0 NOT_OK\r\nMESSAGE: Unexpected error\r\n"),
+			expectedResp: response{
+				command: nil,
+				ok:      false,
+				message: []byte("Unexpected error"),
+				key:     nil,
+				value:   nil,
+			},
+			expectedErr: nil,
+		},
 	}
 
 	for _, tc := range testCases {

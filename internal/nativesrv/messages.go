@@ -2,7 +2,6 @@ package nativesrv
 
 import (
 	"bytes"
-	"fmt"
 	"net"
 )
 
@@ -169,7 +168,7 @@ ParsingLoop:
 	for i := 1; i < len(msgLines); i++ {
 		tokenName, tokenValue, found := bytes.Cut(msgLines[i], []byte(": "))
 		if !found || len(tokenName) == 0 || len(tokenValue) == 0 {
-			encounteredErr = fmt.Errorf("%d", len(msgLines))
+			encounteredErr = ErrMalformedResponse
 			break ParsingLoop
 		}
 		switch string(tokenName) {

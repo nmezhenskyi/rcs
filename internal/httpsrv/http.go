@@ -24,8 +24,6 @@ type Server struct {
 	Logger zerolog.Logger // By defaut Logger is disabled, but can be manually attached.
 }
 
-// --- Public API: --- //
-
 func NewServer(c *cache.CacheMap) *Server {
 	if c == nil {
 		c = cache.NewCacheMap()
@@ -97,8 +95,6 @@ func (s *Server) Close() error {
 	}
 	return err
 }
-
-// --- Private: --- //
 
 func (s *Server) setupRoutes() {
 	s.router.PUT("/SET/:key", s.handleSet())
@@ -217,8 +213,6 @@ func (s *Server) handlePing() httprouter.Handle {
 		sendJSON(w, 200, httpResponse{Command: "PING", Message: "PONG", Ok: true})
 	}
 }
-
-// --- Helpers: --- //
 
 type httpResponse struct {
 	Command string `json:"command"`

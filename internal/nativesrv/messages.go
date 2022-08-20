@@ -2,6 +2,7 @@ package nativesrv
 
 import (
 	"bytes"
+	"fmt"
 	"net"
 )
 
@@ -50,9 +51,7 @@ func parseRequest(msg []byte) (request, error) {
 		msgLines = msgLines[:linesCount-1]
 		linesCount -= 1
 	}
-	if linesCount > 0 {
-		msgLines[linesCount-1] = bytes.TrimSuffix(msgLines[linesCount-1], []byte("\r\n"))
-	}
+	msgLines[linesCount-1] = bytes.TrimSuffix(msgLines[linesCount-1], []byte("\r\n"))
 	headerTokens := bytes.Split(msgLines[0], []byte(" "))
 	if len(headerTokens) != 2 || bytes.Compare(headerTokens[0], []byte("RCSP/1.0")) != 0 {
 		return request{}, ErrUnknownProtocol
@@ -66,7 +65,7 @@ func parseRequest(msg []byte) (request, error) {
 	// Parse Command:
 	parsedReq.command = headerTokens[1]
 	// Parse Key:
-	if len(msgLines) > 1 {
+	if linesCount > 1 {
 		keyTokens := bytes.SplitN(msgLines[1], []byte(": "), 2)
 		if len(keyTokens) != 2 {
 			encounteredErr = ErrInvalidKey
@@ -77,7 +76,7 @@ func parseRequest(msg []byte) (request, error) {
 		}
 	}
 	// Parse Value:
-	if len(msgLines) > 2 {
+	if linesCount > 2 {
 		valueTokens := bytes.SplitN(msgLines[2], []byte(": "), 2)
 		if len(valueTokens) != 2 || bytes.Compare(valueTokens[0], []byte("VALUE")) != 0 {
 			encounteredErr = ErrMalformedRequest
@@ -135,7 +134,9 @@ func parseResponse(msg []byte) (response, error) {
 	linesCount := len(msgLines)
 	if linesCount != 0 && len(msgLines[linesCount-1]) == 0 {
 		msgLines = msgLines[:linesCount-1]
+		linesCount -= 1
 	}
+	msgLines[linesCount-1] = bytes.TrimSuffix(msgLines[linesCount-1], []byte("\r\n"))
 	headerTokens := bytes.Split(msgLines[0], []byte(" "))
 	if len(headerTokens) < 2 {
 		return response{}, ErrMalformedResponse
@@ -161,23 +162,23 @@ func parseResponse(msg []byte) (response, error) {
 	if bytes.Compare(headerTokens[okTokenIndex], []byte("OK")) == 0 {
 		parsedResp.ok = true
 	} else if bytes.Compare(headerTokens[okTokenIndex], []byte("NOT_OK")) != 0 {
-		encounteredErr = ErrMalformedRequest
+		encounteredErr = ErrMalformedResponse
 	}
 
 ParsingLoop:
 	for i := 1; i < len(msgLines); i++ {
-		tokens := bytes.SplitN(msgLines[i], []byte(": "), 2)
-		if len(tokens) != 2 {
-			encounteredErr = ErrMalformedResponse
+		tokenName, tokenValue, found := bytes.Cut(msgLines[i], []byte(": "))
+		if !found || len(tokenName) == 0 || len(tokenValue) == 0 {
+			encounteredErr = fmt.Errorf("%d", len(msgLines))
 			break ParsingLoop
 		}
-		switch string(tokens[0]) {
+		switch string(tokenName) {
 		case "MESSAGE":
-			parsedResp.message = tokens[1]
+			parsedResp.message = tokenValue
 		case "KEY":
-			parsedResp.key = tokens[1]
+			parsedResp.key = tokenValue
 		case "VALUE":
-			parsedResp.value = tokens[1]
+			parsedResp.value = tokenValue
 		default:
 			encounteredErr = ErrMalformedResponse
 			break ParsingLoop

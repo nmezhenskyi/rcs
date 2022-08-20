@@ -24,6 +24,7 @@ func TestSet(t *testing.T) {
 			t.Errorf("Server failed: %v", err)
 		}
 	}()
+	defer server.Close()
 
 	testCases := []struct {
 		name             string

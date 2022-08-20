@@ -23,8 +23,6 @@ type Server struct {
 	Logger zerolog.Logger // By defaut Logger is disabled, but can be manually attached.
 }
 
-// --- Public API: --- //
-
 func NewServer(c *cache.CacheMap, opts ...grpc.ServerOption) *Server {
 	if c == nil {
 		c = cache.NewCacheMap()

@@ -5,6 +5,7 @@
 package nativesrv
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
@@ -35,6 +36,8 @@ type Server struct {
 	Logger zerolog.Logger // By defaut Logger is disabled, but can be manually attached.
 }
 
+// NewServer initializes a new Server instance ready to be used and returns a pointer to it.
+// You can also attach a Logger to returned Server by accessing public field Server.Logger.
 func NewServer(c *cache.CacheMap) *Server {
 	if c == nil {
 		c = cache.NewCacheMap()
@@ -46,6 +49,8 @@ func NewServer(c *cache.CacheMap) *Server {
 	}
 }
 
+// ListenAndServe listens on the given TCP network address addr and
+// handles requests on incoming connections according to RCSP.
 func (s *Server) ListenAndServe(addr string) error {
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -56,13 +61,26 @@ func (s *Server) ListenAndServe(addr string) error {
 	if err != nil {
 		s.Logger.Error().Err(err).Msg("failed while serving")
 	}
+	// if err != nil && err != ErrServerClosed {
+	// 	s.Logger.Error().Err(err).Msg("server failed")
+	// }
 	return err
 }
 
-func (s *Server) Shutdown() {
+// Shutdown gracefully shuts down the server without interrupting any
+// active connections.
+func (s *Server) Shutdown(ctx context.Context) error {
+	s.inShutdown.setTrue()
+
 	// TODO: wait for all active conns to close and then gracefully shutdown the server
+
+	return nil
 }
 
+// Close immediately closes all active connections and underlying listener.
+// For a graceful shutdown, use Shutdown.
+//
+// Close returns any error returned from closing the Server's underlying listener.
 func (s *Server) Close() error {
 	s.inShutdown.setTrue()
 	err := s.listener.Close()
@@ -80,6 +98,8 @@ func (s *Server) Close() error {
 	return err
 }
 
+// serve accepts connections on the given listener and delegates them to
+// handleConnection for processing.
 func (s *Server) serve(lis net.Listener) error {
 	lis = &srvListener{Listener: lis}
 	defer lis.Close()
@@ -99,6 +119,10 @@ func (s *Server) serve(lis net.Listener) error {
 	}
 }
 
+// handleConnection exchanges messages with the given connection. It processes an
+// incoming request and sends a response according to RCSP. It can handle many
+// requests on a single connection. It is encouraged to reuse the same connection for
+// multiple requests.
 func (s *Server) handleConnection(conn net.Conn) {
 	defer func() {
 		conn.Close()

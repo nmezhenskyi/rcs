@@ -121,6 +121,11 @@ MsgLoop:
 		if err != nil {
 			switch err {
 			// TODO: handle errors
+			default:
+				resp.ok = false
+				resp.message = []byte("Unexpected error while parsing request")
+				resp.write(conn)
+				continue MsgLoop
 			}
 		}
 
@@ -136,6 +141,7 @@ MsgLoop:
 			if len(req.value) == 0 {
 				resp.ok = false
 				resp.message = []byte("Value is missing")
+				resp.key = req.key
 				resp.write(conn)
 				continue MsgLoop
 			}

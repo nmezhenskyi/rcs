@@ -5,6 +5,7 @@
 package nativesrv
 
 import (
+	"fmt"
 	"net"
 	"os"
 	"strconv"
@@ -113,20 +114,36 @@ MsgLoop:
 		buf := make([]byte, DefaultMessageSize)
 		n, err := conn.Read(buf)
 		if n == 0 || err != nil {
-			s.Logger.Error().Err(err).Msg("connection read error")
+			s.Logger.Error().Err(err).Msg(
+				fmt.Sprintf("error while reading from %s", conn.RemoteAddr()),
+			)
 			return
 		}
 
 		req, err := parseRequest(buf[:n])
 		if err != nil {
+			s.Logger.Error().Err(err).Msg(
+				fmt.Sprintf("error while parsing request from %s", conn.RemoteAddr()),
+			)
 			switch err {
-			// TODO: handle errors
+			case ErrMalformedRequest:
+				resp.ok = false
+				resp.message = []byte("Malformed request")
+			case ErrUnknownProtocol:
+				resp.ok = false
+				resp.message = []byte("Unknown protocol")
+			case ErrInvalidKey:
+				resp.ok = false
+				resp.message = []byte("Received invalid key")
+			case ErrInvalidValue:
+				resp.ok = false
+				resp.message = []byte("Received invalid value")
 			default:
 				resp.ok = false
 				resp.message = []byte("Unexpected error while parsing request")
-				resp.write(conn)
-				continue MsgLoop
 			}
+			resp.write(conn)
+			continue MsgLoop
 		}
 
 		switch string(req.command) {
@@ -210,7 +227,7 @@ MsgLoop:
 			break MsgLoop
 		default:
 			resp.ok = false
-			resp.message = []byte("Malformed request, invalid command")
+			resp.message = []byte("Received invalid command")
 			resp.write(conn)
 		}
 	}

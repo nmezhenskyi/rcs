@@ -30,6 +30,7 @@ func TestSet(t *testing.T) {
 		key              []byte
 		value            []byte
 		expectedResponse response
+		verifyInCache    bool
 	}{
 		{
 			name:  "Nil key, nil value",
@@ -66,6 +67,31 @@ func TestSet(t *testing.T) {
 				key:     []byte("key1"),
 				value:   nil,
 			},
+		},
+		{
+			name:  "Empty key, valid value",
+			key:   []byte(""),
+			value: []byte("val1"),
+			expectedResponse: response{
+				command: []byte("SET"),
+				message: []byte("Key is missing"),
+				ok:      false,
+				key:     nil,
+				value:   nil,
+			},
+		},
+		{
+			name:  "Valid key, valid value",
+			key:   []byte("key1"),
+			value: []byte("val1"),
+			expectedResponse: response{
+				command: []byte("SET"),
+				message: nil,
+				ok:      true,
+				key:     []byte("key1"),
+				value:   nil,
+			},
+			verifyInCache: true,
 		},
 	}
 
@@ -112,6 +138,17 @@ func TestSet(t *testing.T) {
 			if bytes.Compare(resp.value, tc.expectedResponse.value) != 0 {
 				t.Errorf("Expected value to be \"%s\", got \"%s\" instead",
 					string(tc.expectedResponse.value), string(resp.value))
+			}
+			if tc.verifyInCache {
+				key := string(req.key)
+				valInCache, ok := server.cache.Get(key)
+				if !ok {
+					t.Error("Value is missing in Server.cache")
+				}
+				if bytes.Compare(req.value, valInCache) != 0 {
+					t.Errorf("Expected value in Server.cache to be \"%s\", got \"%s\" instead",
+						string(req.value), string(valInCache))
+				}
 			}
 		})
 	}

@@ -154,3 +154,31 @@ func TestSet(t *testing.T) {
 		})
 	}
 }
+
+func TestGet(t *testing.T) {
+
+}
+
+func TestDelete(t *testing.T) {
+
+}
+
+func TestPurge(t *testing.T) {
+
+}
+
+func TestLength(t *testing.T) {
+
+}
+
+func TestKeys(t *testing.T) {
+
+}
+
+func TestPing(t *testing.T) {
+
+}
+
+func TestClose(t *testing.T) {
+
+}

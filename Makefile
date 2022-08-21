@@ -22,6 +22,10 @@ run:
 test:
 	go test ./internal/**
 
+.PHONY: tidy
+tidy:
+	go mod tidy
+
 .PHONY: clean
 clean:
 	-@rm -r ./bin 2>/dev/null || true

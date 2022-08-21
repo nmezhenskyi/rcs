@@ -93,7 +93,8 @@ func (s *Server) ListenAndServe(addr string) error {
 	return s.server.Serve(lis)
 }
 
-func (s *Server) Shutdown() {
+func (s *Server) Shutdown(ctx context.Context) {
+	// TODO: accept timeout
 	s.server.GracefulStop()
 }
 

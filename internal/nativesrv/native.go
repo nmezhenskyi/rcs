@@ -198,6 +198,13 @@ MsgLoop:
 				resp.write(conn)
 				continue MsgLoop
 			}
+			if len(req.value) != 0 {
+				resp.ok = false
+				resp.message = []byte("Received unexpected value")
+				resp.key = req.key
+				resp.write(conn)
+				continue MsgLoop
+			}
 			val, ok := s.cache.Get(string(req.key))
 			resp.ok = ok
 			resp.key = req.key

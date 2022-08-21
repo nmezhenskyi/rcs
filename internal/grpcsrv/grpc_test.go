@@ -33,6 +33,7 @@ func TestSet(t *testing.T) {
 	}()
 	client, conn := newTestClient(serverAddr, t)
 	defer conn.Close()
+	defer server.Close()
 
 	testCases := []struct {
 		name  string
@@ -75,8 +76,6 @@ func TestSet(t *testing.T) {
 			}
 		})
 	}
-
-	server.Shutdown()
 }
 
 func TestGet(t *testing.T) {
@@ -89,6 +88,7 @@ func TestGet(t *testing.T) {
 	}()
 	client, conn := newTestClient(serverAddr, t)
 	defer conn.Close()
+	defer server.Close()
 
 	testCases := []struct {
 		name  string
@@ -125,8 +125,6 @@ func TestGet(t *testing.T) {
 			}
 		})
 	}
-
-	server.Shutdown()
 }
 
 func TestDelete(t *testing.T) {
@@ -142,6 +140,7 @@ func TestDelete(t *testing.T) {
 	}()
 	client, conn := newTestClient(serverAddr, t)
 	defer conn.Close()
+	defer server.Close()
 
 	lengthBefore := server.cache.Length()
 	reqData := &pb.DeleteRequest{Key: "key1"}
@@ -155,8 +154,6 @@ func TestDelete(t *testing.T) {
 	if server.cache.Length() != lengthBefore-1 {
 		t.Errorf("Cache length has not changed")
 	}
-
-	server.Shutdown()
 }
 
 func TestPurge(t *testing.T) {
@@ -172,6 +169,7 @@ func TestPurge(t *testing.T) {
 	}()
 	client, conn := newTestClient(serverAddr, t)
 	defer conn.Close()
+	defer server.Close()
 
 	reqData := &pb.PurgeRequest{}
 	reply, err := client.Purge(context.Background(), reqData)
@@ -184,8 +182,6 @@ func TestPurge(t *testing.T) {
 	if server.cache.Length() != 0 {
 		t.Errorf("Cache is not empty")
 	}
-
-	server.Shutdown()
 }
 
 func TestLength(t *testing.T) {
@@ -203,6 +199,7 @@ func TestLength(t *testing.T) {
 	}()
 	client, conn := newTestClient(serverAddr, t)
 	defer conn.Close()
+	defer server.Close()
 
 	actualLength := server.cache.Length()
 	reqData := &pb.LengthRequest{}
@@ -216,8 +213,6 @@ func TestLength(t *testing.T) {
 	if reply.Length != int64(actualLength) {
 		t.Errorf("Expected length %d, got %d instead", actualLength, reply.Length)
 	}
-
-	server.Shutdown()
 }
 
 func TestPing(t *testing.T) {
@@ -233,6 +228,7 @@ func TestPing(t *testing.T) {
 	}()
 	client, conn := newTestClient(serverAddr, t)
 	defer conn.Close()
+	defer server.Close()
 
 	reqData := &pb.PingRequest{}
 	reply, err := client.Ping(context.Background(), reqData)

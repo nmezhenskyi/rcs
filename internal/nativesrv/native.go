@@ -52,6 +52,7 @@ func NewServer(c *cache.CacheMap) *Server {
 // ListenAndServe listens on the given TCP network address addr and
 // handles requests on incoming connections according to RCSP.
 func (s *Server) ListenAndServe(addr string) error {
+	s.Logger.Info().Msg("Starting native server on " + addr)
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		s.Logger.Error().Err(err).Msg("failed to start listener")
@@ -61,10 +62,12 @@ func (s *Server) ListenAndServe(addr string) error {
 	if err != nil {
 		s.Logger.Error().Err(err).Msg("failed while serving")
 	}
-	// if err != nil && err != ErrServerClosed {
-	// 	s.Logger.Error().Err(err).Msg("server failed")
-	// }
 	return err
+}
+
+// TODO:
+func (s *Server) ListenAndServeTLS(addr, certFile, keyFile string) error {
+	return nil
 }
 
 // Shutdown gracefully shuts down the server without interrupting any
@@ -73,6 +76,8 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	s.inShutdown.setTrue()
 
 	// TODO: wait for all active conns to close and then gracefully shutdown the server
+
+	s.Logger.Info().Msg("native server has been shutdown")
 
 	return nil
 }
@@ -139,73 +144,55 @@ MsgLoop:
 		n, err := conn.Read(buf)
 		if n == 0 || err != nil {
 			s.Logger.Error().Err(err).Msg(
-				fmt.Sprintf("error while reading from %s", conn.RemoteAddr()),
-			)
+				fmt.Sprintf("error while reading from %s", conn.RemoteAddr()))
 			return
 		}
 
 		req, err := parseRequest(buf[:n])
 		if err != nil {
 			s.Logger.Error().Err(err).Msg(
-				fmt.Sprintf("error while parsing request from %s", conn.RemoteAddr()),
-			)
+				fmt.Sprintf("error while parsing request from %s", conn.RemoteAddr()))
 			switch err {
 			case ErrMalformedRequest:
-				resp.ok = false
-				resp.message = []byte("Malformed request")
+				resp.writeError(conn, nil, []byte("Malformed request"))
 			case ErrUnknownProtocol:
-				resp.ok = false
-				resp.message = []byte("Unknown protocol")
+				resp.writeError(conn, nil, []byte("Unknown protocol"))
 			case ErrInvalidKey:
-				resp.ok = false
-				resp.message = []byte("Received invalid key")
+				resp.writeError(conn, nil, []byte("Received invalid key"))
 			case ErrInvalidValue:
-				resp.ok = false
-				resp.message = []byte("Received invalid value")
+				resp.writeError(conn, nil, []byte("Received invalid value"))
 			default:
-				resp.ok = false
-				resp.message = []byte("Unexpected error while parsing request")
+				resp.writeError(conn, nil, []byte("Unexpected error while parsing request"))
 			}
-			resp.write(conn)
 			continue MsgLoop
 		}
 
 		switch string(req.command) {
 		case "SET":
-			resp.command = []byte("SET")
 			if len(req.key) == 0 {
-				resp.ok = false
-				resp.message = []byte("Key is missing")
-				resp.write(conn)
+				resp.writeError(conn, []byte("SET"), []byte("Key is missing"))
 				continue MsgLoop
 			}
 			if len(req.value) == 0 {
-				resp.ok = false
-				resp.message = []byte("Value is missing")
-				resp.key = req.key
-				resp.write(conn)
+				resp.writeErrorWithKey(conn, []byte("SET"), []byte("Value is missing"), req.key)
 				continue MsgLoop
 			}
 			s.cache.Set(string(req.key), req.value)
+			resp.command = []byte("SET")
 			resp.ok = true
 			resp.key = req.key
 			resp.write(conn)
 		case "GET":
-			resp.command = []byte("GET")
 			if len(req.key) == 0 {
-				resp.ok = false
-				resp.message = []byte("Key is missing")
-				resp.write(conn)
+				resp.writeError(conn, []byte("GET"), []byte("Key is missing"))
 				continue MsgLoop
 			}
 			if len(req.value) != 0 {
-				resp.ok = false
-				resp.message = []byte("Received unexpected value")
-				resp.key = req.key
-				resp.write(conn)
+				resp.writeErrorWithKey(conn, []byte("GET"), []byte("Received unexpected value"), req.key)
 				continue MsgLoop
 			}
 			val, ok := s.cache.Get(string(req.key))
+			resp.command = []byte("GET")
 			resp.ok = ok
 			resp.key = req.key
 			resp.value = val
@@ -214,14 +201,16 @@ MsgLoop:
 			}
 			resp.write(conn)
 		case "DELETE":
-			resp.command = []byte("DELETE")
 			if len(req.key) == 0 {
-				resp.ok = false
-				resp.message = []byte("Key is missing")
-				resp.write(conn)
+				resp.writeError(conn, []byte("DELETE"), []byte("Key is missing"))
+				continue MsgLoop
+			}
+			if len(req.value) != 0 {
+				resp.writeErrorWithKey(conn, []byte("DELETE"), []byte("Received unexpected value"), req.key)
 				continue MsgLoop
 			}
 			s.cache.Delete(string(req.key))
+			resp.command = []byte("DELETE")
 			resp.ok = true
 			resp.key = req.key
 			resp.write(conn)
@@ -276,6 +265,9 @@ type srvListener struct {
 }
 
 func (l *srvListener) Close() error {
+	if l == nil {
+		return nil
+	}
 	l.once.Do(l.close)
 	return l.closeErr
 }

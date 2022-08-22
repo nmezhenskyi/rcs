@@ -68,23 +68,53 @@ func main() {
 	if conf.Native.Activate {
 		nativeServer = nativesrv.NewServer(globalCache)
 		nativeServer.Logger = logger.With().Str("scope", "native").Logger()
-		// TODO: start native server
+		go func() {
+			var err error
+			if conf.Native.TLS {
+				err = nativeServer.ListenAndServeTLS(
+					getLocalAddr(conf.Native.Port, conf.Native.OnLocalhost),
+					conf.Native.CertFile, conf.Native.KeyFile)
+			} else {
+				err = nativeServer.ListenAndServe(getLocalAddr(conf.Native.Port, conf.Native.OnLocalhost))
+			}
+			if err != nil {
+				os.Exit(1)
+			}
+		}()
 	}
 	if conf.HTTP.Activate {
 		httpServer = httpsrv.NewServer(globalCache)
 		httpServer.Logger = logger.With().Str("scope", "http").Logger()
-		if conf.HTTP.TLS {
-			go httpServer.ListenAndServeTLS(
-				getLocalAddr(conf.HTTP.Port, conf.HTTP.OnLocalhost),
-				conf.HTTP.CertFile, conf.HTTP.KeyFile)
-		} else {
-			go httpServer.ListenAndServe(getLocalAddr(conf.HTTP.Port, conf.HTTP.OnLocalhost))
-		}
+		go func() {
+			var err error
+			if conf.HTTP.TLS {
+				err = httpServer.ListenAndServeTLS(
+					getLocalAddr(conf.HTTP.Port, conf.HTTP.OnLocalhost),
+					conf.HTTP.CertFile, conf.HTTP.KeyFile)
+			} else {
+				err = httpServer.ListenAndServe(getLocalAddr(conf.HTTP.Port, conf.HTTP.OnLocalhost))
+			}
+			if err != nil {
+				os.Exit(1)
+			}
+		}()
 	}
 	if conf.GRPC.Activate {
 		grpcServer = grpcsrv.NewServer(globalCache)
 		grpcServer.Logger = logger.With().Str("scope", "grpc").Logger()
-		// TODO: start grpc server
+		go func() {
+			var err error
+			if conf.GRPC.TLS {
+				err = grpcServer.ListenAndServeTLS(
+					getLocalAddr(conf.GRPC.Port, conf.GRPC.OnLocalhost),
+					conf.GRPC.CertFile, conf.GRPC.KeyFile)
+			} else {
+				err = grpcServer.ListenAndServe(getLocalAddr(conf.GRPC.Port, conf.GRPC.OnLocalhost))
+			}
+			if err != nil {
+				os.Exit(1)
+			}
+		}()
 	}
 
 	<-shutdownSignal

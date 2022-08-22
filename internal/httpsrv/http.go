@@ -61,6 +61,9 @@ func (s *Server) ListenAndServe(addr string) error {
 	if err != nil && err != http.ErrServerClosed {
 		s.Logger.Error().Err(err).Msg("http server failed")
 	}
+	if err == http.ErrServerClosed {
+		return nil
+	}
 	return err
 }
 
@@ -70,6 +73,9 @@ func (s *Server) ListenAndServeTLS(addr, certFile, keyFile string) error {
 	err := s.server.ListenAndServeTLS(certFile, keyFile)
 	if err != nil && err != http.ErrServerClosed {
 		s.Logger.Error().Err(err).Msg("http server failed")
+	}
+	if err == http.ErrServerClosed {
+		return nil
 	}
 	return err
 }

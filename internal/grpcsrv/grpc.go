@@ -86,6 +86,7 @@ func (s *Server) Ping(ctx context.Context, in *pb.PingRequest) (*pb.PingReply, e
 }
 
 func (s *Server) ListenAndServe(addr string) error {
+	s.Logger.Info().Msg("Starting grpc server on " + addr)
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		return err
@@ -93,9 +94,15 @@ func (s *Server) ListenAndServe(addr string) error {
 	return s.server.Serve(lis)
 }
 
+// TODO:
+func (s *Server) ListenAndServeTLS(addr, certFile, keyFile string) error {
+	return nil
+}
+
 func (s *Server) Shutdown(ctx context.Context) {
 	// TODO: accept timeout
 	s.server.GracefulStop()
+	s.Logger.Info().Msg("grpc server has been shutdown")
 }
 
 func (s *Server) Close() {

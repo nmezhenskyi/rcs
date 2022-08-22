@@ -19,7 +19,7 @@ type request struct {
 	value   []byte
 }
 
-func (r request) write(conn net.Conn) {
+func (r request) write(conn net.Conn) (n int, err error) {
 	msg := []byte("RCSP/1.0")
 	if r.command != nil {
 		msg = append(msg, ' ')
@@ -36,7 +36,7 @@ func (r request) write(conn net.Conn) {
 		msg = append(msg, r.value...)
 		msg = append(msg, []byte("\r\n")...)
 	}
-	conn.Write(msg)
+	return conn.Write(msg)
 }
 
 func parseRequest(msg []byte) (request, error) {
@@ -95,7 +95,7 @@ type response struct {
 	value   []byte
 }
 
-func (r response) write(conn net.Conn) {
+func (r response) write(conn net.Conn) (n int, err error) {
 	msg := []byte("RCSP/1.0")
 	if r.command != nil {
 		msg = append(msg, ' ')
@@ -121,7 +121,25 @@ func (r response) write(conn net.Conn) {
 		msg = append(msg, r.value...)
 		msg = append(msg, []byte("\r\n")...)
 	}
-	conn.Write(msg)
+	return conn.Write(msg)
+}
+
+func (r response) writeError(conn net.Conn, command, message []byte) (n int, err error) {
+	r.command = command
+	r.ok = false
+	r.message = message
+	r.key = nil
+	r.value = nil
+	return r.write(conn)
+}
+
+func (r response) writeErrorWithKey(conn net.Conn, command, message, key []byte) (n int, err error) {
+	r.command = command
+	r.ok = false
+	r.message = message
+	r.key = key
+	r.value = nil
+	return r.write(conn)
 }
 
 func parseResponse(msg []byte) (response, error) {

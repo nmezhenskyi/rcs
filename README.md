@@ -11,7 +11,7 @@ out of curiosity and inspired by Memcached.
 
 - Highly customizable in-memory cache (in-progress)
 - Three APIs for versatility: gRPC, HTTP, Native
-- Optional state snapshots on disk (in-progress)
+- Optional state snapshots to disk (in-progress)
 
 ## API
 

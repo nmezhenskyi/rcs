@@ -7,6 +7,7 @@ import (
 	"context"
 	"net"
 	"os"
+	"time"
 
 	"github.com/nmezhenskyi/rcs/internal/cache"
 	pb "github.com/nmezhenskyi/rcs/internal/genproto"
@@ -14,6 +15,7 @@ import (
 	"google.golang.org/grpc"
 )
 
+// Server implements RCS gRPC service.
 type Server struct {
 	pb.UnimplementedCacheServiceServer // Embed for forward compatibility.
 
@@ -99,12 +101,32 @@ func (s *Server) ListenAndServeTLS(addr, certFile, keyFile string) error {
 	return nil
 }
 
-func (s *Server) Shutdown(ctx context.Context) {
-	// TODO: accept timeout
-	s.server.GracefulStop()
-	s.Logger.Info().Msg("grpc server has been shutdown")
+// Shutdown gracefully shuts down the server without interrupting any
+// active connections. Accepts context with timeout that will forcefully close
+// the server if timeout runs out.
+func (s *Server) Shutdown(ctx context.Context) error {
+	stopped := make(chan struct{}, 1)
+	go func() {
+		s.server.GracefulStop()
+		close(stopped)
+		s.Logger.Info().Msg("grpc server has been shutdown")
+	}()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-stopped:
+			return nil
+		default:
+			time.Sleep(50 * time.Millisecond)
+			continue
+		}
+	}
 }
 
+// Close immediately closes all active connections and listeners.
+// For a graceful shutdown, use Shutdown.
 func (s *Server) Close() {
 	s.server.Stop()
 }

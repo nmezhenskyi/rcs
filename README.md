@@ -4,8 +4,8 @@
 
 RCS, which stands for Remote Caching Server, is an in-memory key-value data store written in Go.
 It is designed to be used in distributed systems. RCS prioritizes versatility over efficiency.
-It provides three diffent APIs: HTTP, gRPC, and the native one. This project was created
-out of curiosity and inspired by Memcached.
+It provides three distinct APIs: gRPC, HTTP, and Native. This project was created
+out of curiosity as a learning exercise. Inspired by Memcached and Redis.
 
 ## Features
 
@@ -21,11 +21,28 @@ In progress...
 
 In progress...
 
-## Get Started
+## Getting Started
 
 ### Build from source
 
-In progress...
+Prerequisites:
+
+- Go 1.18 compiler and tools
+- Protocol buffer compiler v3
+- Go plugins for protoc
+- GNU Make (optional)
+
+Steps:
+
+1. Clone the repository `git clone https://github.com/nmezhenskyi/rcs.git`.
+2. Generate protobuf & grpc files.
+3. Build the source code.
+
+Alternatively if you have Make installed:
+
+1. Clone the repository `git clone https://github.com/nmezhenskyi/rcs.git`.
+2. Run `make setup`. This will generate protobuf & grpc files, build the project, and
+create the binary in `./bin` directory.
 
 ### Run
 
@@ -38,7 +55,9 @@ on Alpine Linux.
 
 ## Contributing
 
-In progress...
+Feel free to create a pull request with new features and/or bug fixes.
+Please address a single concern in a PR and provide unit tests and documentation.
+When commiting follow [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/).
 
 ## License
 

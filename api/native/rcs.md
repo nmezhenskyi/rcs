@@ -138,6 +138,8 @@ RCSP/1.0 KEYS OK\r\n
 VALUE: <val>\r\n
 ```
 
+Note: value contains a string of a comma separated keys
+
 ### KEYS NOT_OK
 
 ```
@@ -149,6 +151,7 @@ MESSAGE: <msg>\r\n
 
 ```
 RCSP/1.0 PING OK\r\n
+MESSAGE: PONG\r\n
 ```
 
 ### PING NOT_OK

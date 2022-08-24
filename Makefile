@@ -37,6 +37,9 @@ cleanproto:
 .PHONY: cleanall
 cleanall: clean cleanproto
 
+.PHONY: setup
+setup: genproto build
+
 .PHONY: compile
 compile: build run
 

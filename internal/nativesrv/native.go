@@ -239,6 +239,7 @@ MsgLoop:
 		case "PING":
 			resp.command = []byte("PING")
 			resp.ok = true
+			resp.message = []byte("PONG")
 			resp.write(conn)
 		case "CLOSE":
 			resp.command = []byte("CLOSE")

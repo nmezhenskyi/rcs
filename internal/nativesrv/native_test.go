@@ -595,7 +595,7 @@ func TestPing(t *testing.T) {
 
 	expectedResponse := response{
 		command: []byte("PING"),
-		message: nil,
+		message: []byte("PONG"),
 		ok:      true,
 		key:     nil,
 		value:   nil,

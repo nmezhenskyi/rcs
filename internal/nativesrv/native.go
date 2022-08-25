@@ -6,6 +6,7 @@ package nativesrv
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net"
 	"os"
@@ -52,6 +53,10 @@ func NewServer(c *cache.CacheMap) *Server {
 // ListenAndServe listens on the given TCP network address addr and
 // handles requests on incoming connections according to RCSP.
 func (s *Server) ListenAndServe(addr string) error {
+	if s.inShutdown.isSet() {
+		s.Logger.Info().Msg("ListenAndServeTLS aborted: Server is in shutdown mode")
+		return nil
+	}
 	s.Logger.Info().Msg("Starting native server on " + addr)
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -65,9 +70,38 @@ func (s *Server) ListenAndServe(addr string) error {
 	return err
 }
 
-// TODO:
+// ListenAndServeTLS listens on the given TCP network address addr and
+// handles requests on incoming TLS connections according to RCSP.
+//
+// Requires valid certiticate and key files containing PEM encoded data.
 func (s *Server) ListenAndServeTLS(addr, certFile, keyFile string) error {
-	return nil
+	if s.inShutdown.isSet() {
+		s.Logger.Info().Msg("ListenAndServeTLS aborted: Server is in shutdown mode")
+		return nil
+	}
+	s.Logger.Info().Msg("Starting tls native server on " + addr)
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		s.Logger.Error().Err(err).Msg("failed to load tls certificate")
+		return err
+	}
+	tlsConfig := tls.Config{
+		CurvePreferences: []tls.CurveID{
+			tls.CurveP256,
+			tls.X25519,
+		},
+		Certificates: []tls.Certificate{cert},
+	}
+	listener, err := tls.Listen("tcp", addr, &tlsConfig)
+	if err != nil {
+		s.Logger.Error().Err(err).Msg("failed to start tls listener")
+		return err
+	}
+	err = s.serve(listener)
+	if err != nil {
+		s.Logger.Error().Err(err).Msg("failed while serving")
+	}
+	return err
 }
 
 // Shutdown gracefully shuts down the server without interrupting any
@@ -117,6 +151,7 @@ func (s *Server) serve(lis net.Listener) error {
 			s.Logger.Error().Err(err).Msg("failed to accept connection")
 			continue
 		}
+		s.Logger.Debug().Msg("Received new connection (" + conn.RemoteAddr().String() + ")")
 		s.mu.Lock()
 		s.activeConns[conn] = struct{}{}
 		s.mu.Unlock()
@@ -134,6 +169,7 @@ func (s *Server) handleConnection(conn net.Conn) {
 		s.mu.Lock()
 		delete(s.activeConns, conn)
 		s.mu.Unlock()
+		s.Logger.Debug().Msg("Closed connection (" + conn.RemoteAddr().String() + ")")
 	}()
 
 MsgLoop:
@@ -252,10 +288,6 @@ MsgLoop:
 			resp.write(conn)
 		}
 	}
-}
-
-func (s *Server) shuttingDown() bool {
-	return s.inShutdown.isSet()
 }
 
 // srvListener wraps a net.Listener to protect it from multiple Close() calls.

@@ -35,7 +35,6 @@ func NewServer(c *cache.CacheMap) *Server {
 			WriteTimeout: 10 * time.Second,
 			IdleTimeout:  30 * time.Second,
 			TLSConfig: &tls.Config{
-				PreferServerCipherSuites: true,
 				CurvePreferences: []tls.CurveID{
 					tls.CurveP256,
 					tls.X25519,

@@ -1,6 +1,7 @@
 # RCS
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/nmezhenskyi/rcs)](https://goreportcard.com/report/github.com/nmezhenskyi/rcs)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/nmezhenskyi/rcs/blob/main/LICENSE.md)
 
 RCS, which stands for Remote Caching Server, is an in-memory key-value data store written in Go.
 It is designed to be used in distributed systems. RCS prioritizes versatility over efficiency.
@@ -78,8 +79,8 @@ Steps:
 Alternatively if you have Make installed:
 
 1. Clone the repository: `git clone https://github.com/nmezhenskyi/rcs.git`.
-2. Run `make setup`. This will generate protobuf and grpc files, build the project, and
-create the binary in the `./bin` directory.
+2. Run `make setup` command. This will generate protobuf and grpc files, build the project,
+and create the binary in the `./bin` directory.
 
 ### Run
 

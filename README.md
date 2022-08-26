@@ -25,7 +25,7 @@ __Why?__ To allow for more flexibility when building a distributed system.
 When some performance overhead is not a dealbreaker, it may be easier to communicate
 with the cache server over HTTP with JSON payloads. Likewise, if your project already uses gRPC
 to communicate between services, it would make sense to use it for RCS as well.
-In a situation where you want to keep data communication minimalistic without unneccessary
+In a situation where you want to keep data communication minimalistic without unnecessary
 dependencies (i.e., in a network of Raspberry Pis), the Native API would be a good choice.
 Most importantly, you can use all three of these APIs simultaneously.  
 

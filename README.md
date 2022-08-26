@@ -11,8 +11,11 @@ as a learning exercise. Inspired by Memcached and Redis.
 ## Features
 
 - Highly customizable in-memory cache (in-progress)
-- Three APIs for versatility: Native, gRPC, HTTP
+- Exposes three APIs for versatility: Native, gRPC, HTTP
+- Supports SSL connections
 - Optional state snapshots to disk (in-progress)
+- Optional structured / unstructured logging
+- Packaged as a single binary file
 
 ## API
 

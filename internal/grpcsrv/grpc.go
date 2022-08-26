@@ -5,6 +5,7 @@ package grpcsrv
 
 import (
 	"context"
+	"crypto/tls"
 	"net"
 	"os"
 	"time"
@@ -13,6 +14,7 @@ import (
 	pb "github.com/nmezhenskyi/rcs/internal/genproto"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 // Server implements RCS gRPC service.
@@ -21,6 +23,7 @@ type Server struct {
 
 	server *grpc.Server
 	cache  *cache.CacheMap
+	opts   []grpc.ServerOption
 
 	Logger zerolog.Logger // By defaut Logger is disabled, but can be manually attached.
 }
@@ -29,14 +32,13 @@ func NewServer(c *cache.CacheMap, opts ...grpc.ServerOption) *Server {
 	if c == nil {
 		c = cache.NewCacheMap()
 	}
-	s := grpc.NewServer(opts...)
-	grpcServer := &Server{
-		server: s,
+	srv := &Server{
+		server: nil, // Will be initialized in ListenAndServe / ListenAndServeTLS
 		cache:  c,
+		opts:   opts,
 		Logger: zerolog.New(os.Stderr).Level(zerolog.Disabled),
 	}
-	pb.RegisterCacheServiceServer(s, grpcServer)
-	return grpcServer
+	return srv
 }
 
 func (s *Server) Set(ctx context.Context, in *pb.SetRequest) (*pb.SetReply, error) {
@@ -89,16 +91,33 @@ func (s *Server) Ping(ctx context.Context, in *pb.PingRequest) (*pb.PingReply, e
 
 func (s *Server) ListenAndServe(addr string) error {
 	s.Logger.Info().Msg("Starting grpc server on " + addr)
+	s.server = grpc.NewServer(s.opts...)
+	pb.RegisterCacheServiceServer(s.server, s)
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
+		s.Logger.Error().Err(err).Msg("failed to start listener")
 		return err
 	}
 	return s.server.Serve(lis)
 }
 
-// TODO:
+// ListenAndServeTLS
 func (s *Server) ListenAndServeTLS(addr, certFile, keyFile string) error {
-	return nil
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		s.Logger.Error().Err(err).Msg("failed to load tls certificate")
+		return err
+	}
+	creds := credentials.NewServerTLSFromCert(&cert)
+	s.opts = append(s.opts, grpc.Creds(creds))
+	s.server = grpc.NewServer(s.opts...)
+	pb.RegisterCacheServiceServer(s.server, s)
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		s.Logger.Error().Err(err).Msg("failed to start tls listener")
+		return err
+	}
+	return s.server.Serve(listener)
 }
 
 // Shutdown gracefully shuts down the server without interrupting any
@@ -129,4 +148,5 @@ func (s *Server) Shutdown(ctx context.Context) error {
 // For a graceful shutdown, use Shutdown.
 func (s *Server) Close() {
 	s.server.Stop()
+	s.Logger.Info().Msg("grpc server has been closed")
 }

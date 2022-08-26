@@ -134,6 +134,7 @@ func (s *Server) Close() error {
 	}
 	s.mu.Unlock()
 
+	s.Logger.Info().Msg("native server has been closed")
 	return err
 }
 
@@ -141,13 +142,17 @@ func (s *Server) Close() error {
 // handleConnection for processing.
 func (s *Server) serve(lis net.Listener) error {
 	lis = &srvListener{Listener: lis}
-	defer lis.Close()
 	s.mu.Lock()
 	s.listener = lis.(*srvListener)
 	s.mu.Unlock()
+	defer s.listener.Close()
 	for {
+		if s.inShutdown.isSet() {
+			return nil
+		}
 		conn, err := lis.Accept()
 		if err != nil {
+			// TODO: check error & return if critical
 			s.Logger.Error().Err(err).Msg("failed to accept connection")
 			continue
 		}
@@ -161,8 +166,8 @@ func (s *Server) serve(lis net.Listener) error {
 
 // handleConnection exchanges messages with the given connection. It processes an
 // incoming request and sends a response according to RCSP. It can handle many
-// requests on a single connection. It is encouraged to reuse the same connection for
-// multiple requests.
+// sequential requests on a single connection. It is encouraged to reuse the same
+// connection for multiple requests.
 func (s *Server) handleConnection(conn net.Conn) {
 	defer func() {
 		conn.Close()
@@ -174,119 +179,172 @@ func (s *Server) handleConnection(conn net.Conn) {
 
 MsgLoop:
 	for {
-		var resp = response{}
-
 		buf := make([]byte, DefaultMessageSize)
 		n, err := conn.Read(buf)
 		if n == 0 || err != nil {
-			s.Logger.Error().Err(err).Msg(
-				fmt.Sprintf("error while reading from %s", conn.RemoteAddr()))
+			s.Logger.Error().Err(err).Msg(fmt.Sprintf("error while reading from %s", conn.RemoteAddr()))
 			return
 		}
 
 		req, err := parseRequest(buf[:n])
 		if err != nil {
-			s.Logger.Error().Err(err).Msg(
-				fmt.Sprintf("error while parsing request from %s", conn.RemoteAddr()))
-			switch err {
-			case ErrMalformedRequest:
-				resp.writeError(conn, nil, []byte("Malformed request"))
-			case ErrUnknownProtocol:
-				resp.writeError(conn, nil, []byte("Unknown protocol"))
-			case ErrInvalidKey:
-				resp.writeError(conn, nil, []byte("Received invalid key"))
-			case ErrInvalidValue:
-				resp.writeError(conn, nil, []byte("Received invalid value"))
-			default:
-				resp.writeError(conn, nil, []byte("Unexpected error while parsing request"))
-			}
+			s.handleParsingError(conn, err)
 			continue MsgLoop
 		}
 
 		switch string(req.command) {
 		case "SET":
-			if len(req.key) == 0 {
-				resp.writeError(conn, []byte("SET"), []byte("Key is missing"))
-				continue MsgLoop
-			}
-			if len(req.value) == 0 {
-				resp.writeErrorWithKey(conn, []byte("SET"), []byte("Value is missing"), req.key)
-				continue MsgLoop
-			}
-			s.cache.Set(string(req.key), req.value)
-			resp.command = []byte("SET")
-			resp.ok = true
-			resp.key = req.key
-			resp.write(conn)
+			s.handleSet(conn, &req)
 		case "GET":
-			if len(req.key) == 0 {
-				resp.writeError(conn, []byte("GET"), []byte("Key is missing"))
-				continue MsgLoop
-			}
-			if len(req.value) != 0 {
-				resp.writeErrorWithKey(conn, []byte("GET"), []byte("Received unexpected value"), req.key)
-				continue MsgLoop
-			}
-			val, ok := s.cache.Get(string(req.key))
-			resp.command = []byte("GET")
-			resp.ok = ok
-			resp.key = req.key
-			resp.value = val
-			if !resp.ok {
-				resp.message = []byte("Not found")
-			}
-			resp.write(conn)
+			s.handleGet(conn, &req)
 		case "DELETE":
-			if len(req.key) == 0 {
-				resp.writeError(conn, []byte("DELETE"), []byte("Key is missing"))
-				continue MsgLoop
-			}
-			if len(req.value) != 0 {
-				resp.writeErrorWithKey(conn, []byte("DELETE"), []byte("Received unexpected value"), req.key)
-				continue MsgLoop
-			}
-			s.cache.Delete(string(req.key))
-			resp.command = []byte("DELETE")
-			resp.ok = true
-			resp.key = req.key
-			resp.write(conn)
+			s.handleDelete(conn, &req)
 		case "PURGE":
-			s.cache.Purge()
-			resp.command = []byte("PURGE")
-			resp.ok = true
-			resp.write(conn)
+			s.handlePurge(conn, &req)
 		case "LENGTH":
-			length := s.cache.Length()
-			resp.command = []byte("LENGTH")
-			resp.ok = true
-			resp.value = []byte(strconv.Itoa(length))
-			resp.write(conn)
+			s.handleLength(conn, &req)
 		case "KEYS":
-			resp.command = []byte("KEYS")
-			keys := s.cache.Keys()
-			if len(keys) != 0 {
-				resp.ok = true
-				resp.value = []byte(strings.Join(keys, ","))
-			} else {
-				resp.ok = false
-				resp.message = []byte("No keys")
-			}
-			resp.write(conn)
+			s.handleKeys(conn, &req)
 		case "PING":
-			resp.command = []byte("PING")
-			resp.ok = true
-			resp.message = []byte("PONG")
-			resp.write(conn)
+			s.handlePing(conn, &req)
 		case "CLOSE":
-			resp.command = []byte("CLOSE")
-			resp.ok = true
-			resp.write(conn)
+			s.handleCloseConn(conn, &req)
 			break MsgLoop
 		default:
-			resp.ok = false
-			resp.message = []byte("Received invalid command")
-			resp.write(conn)
+			s.handleInvalidCommand(conn, &req)
 		}
+	}
+}
+
+func (s *Server) handleSet(conn net.Conn, req *request) {
+	var resp = response{}
+
+	if len(req.key) == 0 {
+		resp.writeError(conn, []byte("SET"), []byte("Key is missing"))
+		return
+	}
+	if len(req.value) == 0 {
+		resp.writeErrorWithKey(conn, []byte("SET"), []byte("Value is missing"), req.key)
+		return
+	}
+
+	s.cache.Set(string(req.key), req.value)
+	resp.command = []byte("SET")
+	resp.ok = true
+	resp.key = req.key
+	resp.write(conn)
+}
+
+func (s *Server) handleGet(conn net.Conn, req *request) {
+	var resp = response{}
+
+	if len(req.key) == 0 {
+		resp.writeError(conn, []byte("GET"), []byte("Key is missing"))
+		return
+	}
+	if len(req.value) != 0 {
+		resp.writeErrorWithKey(conn, []byte("GET"), []byte("Received unexpected value"), req.key)
+		return
+	}
+
+	val, ok := s.cache.Get(string(req.key))
+	resp.command = []byte("GET")
+	resp.ok = ok
+	resp.key = req.key
+	resp.value = val
+	if !resp.ok {
+		resp.message = []byte("Not found")
+	}
+	resp.write(conn)
+}
+
+func (s *Server) handleDelete(conn net.Conn, req *request) {
+	var resp = response{}
+
+	if len(req.key) == 0 {
+		resp.writeError(conn, []byte("DELETE"), []byte("Key is missing"))
+		return
+	}
+	if len(req.value) != 0 {
+		resp.writeErrorWithKey(conn, []byte("DELETE"), []byte("Received unexpected value"), req.key)
+		return
+	}
+
+	s.cache.Delete(string(req.key))
+	resp.command = []byte("DELETE")
+	resp.ok = true
+	resp.key = req.key
+	resp.write(conn)
+}
+
+func (s *Server) handlePurge(conn net.Conn, req *request) {
+	var resp = response{}
+	s.cache.Purge()
+	resp.command = []byte("PURGE")
+	resp.ok = true
+	resp.write(conn)
+}
+
+func (s *Server) handleLength(conn net.Conn, req *request) {
+	var resp = response{}
+	length := s.cache.Length()
+	resp.command = []byte("LENGTH")
+	resp.ok = true
+	resp.value = []byte(strconv.Itoa(length))
+	resp.write(conn)
+}
+
+func (s *Server) handleKeys(conn net.Conn, req *request) {
+	var resp = response{}
+	resp.command = []byte("KEYS")
+	keys := s.cache.Keys()
+	if len(keys) != 0 {
+		resp.ok = true
+		resp.value = []byte(strings.Join(keys, ","))
+	} else {
+		resp.ok = false
+		resp.message = []byte("No keys")
+	}
+	resp.write(conn)
+}
+
+func (s *Server) handlePing(conn net.Conn, req *request) {
+	var resp = response{}
+	resp.command = []byte("PING")
+	resp.ok = true
+	resp.message = []byte("PONG")
+	resp.write(conn)
+}
+
+func (s *Server) handleCloseConn(conn net.Conn, req *request) {
+	var resp = response{}
+	resp.command = []byte("CLOSE")
+	resp.ok = true
+	resp.write(conn)
+}
+
+func (s *Server) handleInvalidCommand(conn net.Conn, req *request) {
+	var resp = response{}
+	resp.ok = false
+	resp.message = []byte("Received invalid command")
+	resp.write(conn)
+}
+
+func (s *Server) handleParsingError(conn net.Conn, parsingErr error) {
+	s.Logger.Error().Err(parsingErr).
+		Msg(fmt.Sprintf("error while parsing request from %s", conn.RemoteAddr()))
+	var resp = response{}
+	switch parsingErr {
+	case ErrMalformedRequest:
+		resp.writeError(conn, nil, []byte("Malformed request"))
+	case ErrUnknownProtocol:
+		resp.writeError(conn, nil, []byte("Unknown protocol"))
+	case ErrInvalidKey:
+		resp.writeError(conn, nil, []byte("Received invalid key"))
+	case ErrInvalidValue:
+		resp.writeError(conn, nil, []byte("Received invalid value"))
+	default:
+		resp.writeError(conn, nil, []byte("Unexpected error while parsing request"))
 	}
 }
 

@@ -15,9 +15,6 @@ func TestNewServer(t *testing.T) {
 	if server == nil {
 		t.Error("Expected pointer to initialized Server, got nil instead")
 	}
-	if server.server == nil {
-		t.Error("Server.server has not been initialized")
-	}
 	if server.cache == nil {
 		t.Error("Server.cache has not been initialized")
 	}

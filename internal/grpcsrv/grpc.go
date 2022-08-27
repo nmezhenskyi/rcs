@@ -85,6 +85,11 @@ func (s *Server) Length(ctx context.Context, in *pb.LengthRequest) (*pb.LengthRe
 	return &pb.LengthReply{Length: int64(length), Ok: true}, nil
 }
 
+func (s *Server) Keys(ctx context.Context, in *pb.KeysRequest) (*pb.KeysReply, error) {
+	keys := s.cache.Keys()
+	return &pb.KeysReply{Keys: keys, Ok: true}, nil
+}
+
 func (s *Server) Ping(ctx context.Context, in *pb.PingRequest) (*pb.PingReply, error) {
 	return &pb.PingReply{Message: "PONG", Ok: true}, nil
 }

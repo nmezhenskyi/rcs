@@ -3,6 +3,7 @@ package grpcsrv
 import (
 	"bytes"
 	"context"
+	"strings"
 	"testing"
 
 	pb "github.com/nmezhenskyi/rcs/internal/genproto"
@@ -209,6 +210,43 @@ func TestLength(t *testing.T) {
 	}
 	if reply.Length != int64(actualLength) {
 		t.Errorf("Expected length %d, got %d instead", actualLength, reply.Length)
+	}
+}
+
+func TestKeys(t *testing.T) {
+	server := NewServer(nil)
+	serverAddr := "localhost:5001"
+	server.cache.Set("key1", []byte("10"))
+	server.cache.Set("key2", []byte("20"))
+	server.cache.Set("key3", []byte("30"))
+	server.cache.Set("key4", []byte("40"))
+	server.cache.Set("key5", []byte("50"))
+	go func() {
+		if err := server.ListenAndServe(serverAddr); err != nil {
+			t.Errorf("Server failed: %v", err)
+		}
+	}()
+	client, conn := newTestClient(serverAddr, t)
+	defer conn.Close()
+	defer server.Close()
+
+	expectedKeys := server.cache.Keys()
+	reqData := &pb.KeysRequest{}
+	reply, err := client.Keys(context.Background(), reqData)
+	if err != nil {
+		t.Errorf("Failed to send the request: %v", err)
+	}
+	if !reply.Ok {
+		t.Errorf("Expected Ok to be true, got %t instead", reply.Ok)
+	}
+	if len(reply.Keys) != len(expectedKeys) {
+		t.Errorf("Expected %d keys, got %d instead", len(expectedKeys), len(reply.Keys))
+	}
+	receivedKeys := strings.Join(expectedKeys, ",")
+	for i := range expectedKeys {
+		if !strings.Contains(receivedKeys, expectedKeys[i]) {
+			t.Errorf("Key \"%s\" not found", expectedKeys[i])
+		}
 	}
 }
 

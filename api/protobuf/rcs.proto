@@ -10,6 +10,7 @@ service CacheService {
    rpc Delete (DeleteRequest) returns (DeleteReply) {}
    rpc Purge (PurgeRequest) returns (PurgeReply) {}
    rpc Length (LengthRequest) returns (LengthReply) {}
+   rpc Keys (KeysRequest) returns (KeysReply) {}
    rpc Ping (PingRequest) returns (PingReply) {}
 }
 
@@ -58,6 +59,14 @@ message LengthReply {
    bool ok = 1;
    string message = 2;
    int64 length = 3;
+}
+
+message KeysRequest {}
+
+message KeysReply {
+   bool ok = 1;
+   string message = 2;
+   repeated string keys = 3;
 }
 
 message PingRequest {}

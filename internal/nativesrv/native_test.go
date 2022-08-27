@@ -578,7 +578,7 @@ func TestKeys(t *testing.T) {
 	}
 	for i := range expectedKeys {
 		if !strings.Contains(string(resp.value), expectedKeys[i]) {
-			t.Errorf("Key %s not found", expectedKeys[i])
+			t.Errorf("Key \"%s\" not found", expectedKeys[i])
 		}
 	}
 }

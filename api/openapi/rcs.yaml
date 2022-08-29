@@ -142,6 +142,24 @@ paths:
         503:
           description: Server is unavailable
           content: {}
+  /KEYS:
+    get:
+      summary: Get the array of all currently stored keys
+      tags:
+        - Commands
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KeysResponse'
+        500:
+          description: Unexpected server error
+          content: {}
+        503:
+          description: Server is unavailable
+          content: {}
   /PING:
     get:
       summary: Check if the server is alive
@@ -227,6 +245,20 @@ components:
         value:
           description: Number of keys
           type: integer
+        ok:
+          description: Operation status
+          type: boolean
+    KeysResponse:
+      type: object
+      properties:
+        command:
+          description: Executed command
+          type: string
+        value:
+          description: Array of keys
+          type: array
+          items:
+            type: string
         ok:
           description: Operation status
           type: boolean

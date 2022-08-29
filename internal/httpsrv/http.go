@@ -107,6 +107,7 @@ func (s *Server) setupRoutes() {
 	s.router.DELETE("/DELETE/:key", s.handleDelete())
 	s.router.DELETE("/PURGE", s.handlePurge())
 	s.router.GET("/LENGTH", s.handleLength())
+	s.router.GET("/KEYS", s.handleKeys())
 	s.router.GET("/PING", s.handlePing())
 }
 
@@ -206,6 +207,19 @@ func (s *Server) handleLength() httprouter.Handle {
 		res := httpResponse{
 			Command: "LENGTH",
 			Value:   length,
+			Ok:      true,
+		}
+		sendJSON(w, 200, res)
+	}
+}
+
+func (s *Server) handleKeys() httprouter.Handle {
+	return func(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
+		s.Logger.Debug().Msg("received http GET \"/KEYS\" request")
+		keys := s.cache.Keys()
+		res := httpResponse{
+			Command: "KEYS",
+			Value:   keys,
 			Ok:      true,
 		}
 		sendJSON(w, 200, res)

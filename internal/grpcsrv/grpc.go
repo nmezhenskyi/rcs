@@ -1,6 +1,6 @@
 // Package grpcsrv implements gRPC server.
 //
-// See Protobuf at https://github.com/nmezhenskyi/rcs/blob/main/api/protobuf/rcs.proto.
+// See Protobuf specification at https://github.com/nmezhenskyi/rcs/blob/main/api/protobuf/rcs.proto.
 package grpcsrv
 
 import (
@@ -28,6 +28,8 @@ type Server struct {
 	Logger zerolog.Logger // By defaut Logger is disabled, but can be manually attached.
 }
 
+// NewServer initializes a new grpc Server instance ready to be used and returns a pointer to it.
+// You can also attach a Logger to return Server by accessing public field Server.Logger.
 func NewServer(c *cache.CacheMap, opts ...grpc.ServerOption) *Server {
 	if c == nil {
 		c = cache.NewCacheMap()
@@ -39,6 +41,73 @@ func NewServer(c *cache.CacheMap, opts ...grpc.ServerOption) *Server {
 		Logger: zerolog.New(os.Stderr).Level(zerolog.Disabled),
 	}
 	return srv
+}
+
+// ListenAndServe listens on the given TCP network address addr and
+// handles gRPC requests on incoming connections according to CacheService specification.
+func (s *Server) ListenAndServe(addr string) error {
+	s.Logger.Info().Msg("Starting grpc server on " + addr)
+	s.server = grpc.NewServer(s.opts...)
+	pb.RegisterCacheServiceServer(s.server, s)
+	lis, err := net.Listen("tcp", addr)
+	if err != nil {
+		s.Logger.Error().Err(err).Msg("failed to start listener")
+		return err
+	}
+	return s.server.Serve(lis)
+}
+
+// ListenAndServeTLS listens on the given TCP network address addr and
+// handles gRPC requests on incoming TLS connections according to CacheService specification.
+//
+// Requires valid certificate and key files containing PEM encoded data.
+func (s *Server) ListenAndServeTLS(addr, certFile, keyFile string) error {
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		s.Logger.Error().Err(err).Msg("failed to load tls certificate")
+		return err
+	}
+	creds := credentials.NewServerTLSFromCert(&cert)
+	s.opts = append(s.opts, grpc.Creds(creds))
+	s.server = grpc.NewServer(s.opts...)
+	pb.RegisterCacheServiceServer(s.server, s)
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		s.Logger.Error().Err(err).Msg("failed to start tls listener")
+		return err
+	}
+	return s.server.Serve(listener)
+}
+
+// Shutdown gracefully shuts down the server without interrupting any
+// active connections. Accepts context with timeout that will forcefully close
+// the server if timeout runs out.
+func (s *Server) Shutdown(ctx context.Context) error {
+	stopped := make(chan struct{}, 1)
+	go func() {
+		s.server.GracefulStop()
+		close(stopped)
+		s.Logger.Info().Msg("grpc server has been shutdown")
+	}()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-stopped:
+			return nil
+		default:
+			time.Sleep(50 * time.Millisecond)
+			continue
+		}
+	}
+}
+
+// Close immediately closes all active connections and listeners.
+// For a graceful shutdown, use Shutdown.
+func (s *Server) Close() {
+	s.server.Stop()
+	s.Logger.Info().Msg("grpc server has been closed")
 }
 
 func (s *Server) Set(ctx context.Context, in *pb.SetRequest) (*pb.SetReply, error) {
@@ -92,66 +161,4 @@ func (s *Server) Keys(ctx context.Context, in *pb.KeysRequest) (*pb.KeysReply, e
 
 func (s *Server) Ping(ctx context.Context, in *pb.PingRequest) (*pb.PingReply, error) {
 	return &pb.PingReply{Message: "PONG", Ok: true}, nil
-}
-
-func (s *Server) ListenAndServe(addr string) error {
-	s.Logger.Info().Msg("Starting grpc server on " + addr)
-	s.server = grpc.NewServer(s.opts...)
-	pb.RegisterCacheServiceServer(s.server, s)
-	lis, err := net.Listen("tcp", addr)
-	if err != nil {
-		s.Logger.Error().Err(err).Msg("failed to start listener")
-		return err
-	}
-	return s.server.Serve(lis)
-}
-
-// ListenAndServeTLS
-func (s *Server) ListenAndServeTLS(addr, certFile, keyFile string) error {
-	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
-	if err != nil {
-		s.Logger.Error().Err(err).Msg("failed to load tls certificate")
-		return err
-	}
-	creds := credentials.NewServerTLSFromCert(&cert)
-	s.opts = append(s.opts, grpc.Creds(creds))
-	s.server = grpc.NewServer(s.opts...)
-	pb.RegisterCacheServiceServer(s.server, s)
-	listener, err := net.Listen("tcp", addr)
-	if err != nil {
-		s.Logger.Error().Err(err).Msg("failed to start tls listener")
-		return err
-	}
-	return s.server.Serve(listener)
-}
-
-// Shutdown gracefully shuts down the server without interrupting any
-// active connections. Accepts context with timeout that will forcefully close
-// the server if timeout runs out.
-func (s *Server) Shutdown(ctx context.Context) error {
-	stopped := make(chan struct{}, 1)
-	go func() {
-		s.server.GracefulStop()
-		close(stopped)
-		s.Logger.Info().Msg("grpc server has been shutdown")
-	}()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-stopped:
-			return nil
-		default:
-			time.Sleep(50 * time.Millisecond)
-			continue
-		}
-	}
-}
-
-// Close immediately closes all active connections and listeners.
-// For a graceful shutdown, use Shutdown.
-func (s *Server) Close() {
-	s.server.Stop()
-	s.Logger.Info().Msg("grpc server has been closed")
 }

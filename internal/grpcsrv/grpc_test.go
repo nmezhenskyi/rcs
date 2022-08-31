@@ -242,7 +242,7 @@ func TestKeys(t *testing.T) {
 	if len(reply.Keys) != len(expectedKeys) {
 		t.Errorf("Expected %d keys, got %d instead", len(expectedKeys), len(reply.Keys))
 	}
-	receivedKeys := strings.Join(expectedKeys, ",")
+	receivedKeys := strings.Join(reply.Keys, ",")
 	for i := range expectedKeys {
 		if !strings.Contains(receivedKeys, expectedKeys[i]) {
 			t.Errorf("Key \"%s\" not found", expectedKeys[i])

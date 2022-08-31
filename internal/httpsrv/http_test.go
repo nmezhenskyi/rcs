@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -201,6 +202,44 @@ func TestLength(t *testing.T) {
 	actualLength := server.cache.Length()
 	if int(val) != actualLength {
 		t.Errorf("Expected length %d, got %d instead", actualLength, int(val))
+	}
+}
+
+func TestKeys(t *testing.T) {
+	server := NewServer(nil)
+	server.cache.Set("key1", []byte("10"))
+	server.cache.Set("key2", []byte("20"))
+	server.cache.Set("key3", []byte("30"))
+	server.cache.Set("key4", []byte("40"))
+	server.cache.Set("key5", []byte("50"))
+
+	res, err := sendRequest("GET", "/KEYS", nil, server)
+	if err != nil {
+		t.Errorf("Failed to send request: %v", err)
+	}
+	if code := res.Result().StatusCode; code != http.StatusOK {
+		t.Errorf("Expected response status code %d, got %d instead", http.StatusOK, code)
+	}
+
+	expectedKeys := server.cache.Keys()
+	resData := httpResponse{}
+	json.NewDecoder(res.Body).Decode(&resData)
+	val, ok := resData.Value.([]any)
+	if !ok {
+		t.Errorf("Returned value is not an array")
+	}
+	keys := make([]string, len(val))
+	for i := range val {
+		keys[i], ok = val[i].(string)
+		if !ok {
+			t.Errorf("Returned key is not a string: %v", val[i])
+		}
+	}
+	receivedKeys := strings.Join(keys, ",")
+	for i := range expectedKeys {
+		if !strings.Contains(receivedKeys, expectedKeys[i]) {
+			t.Errorf("Key \"%s\" not found", expectedKeys[i])
+		}
 	}
 }
 

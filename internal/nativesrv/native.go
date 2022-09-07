@@ -8,12 +8,14 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"math/rand"
 	"net"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/nmezhenskyi/rcs/internal/cache"
 	"github.com/rs/zerolog"
@@ -22,6 +24,8 @@ import (
 const (
 	MaxMessageSize     = 1048576 // 1 MB
 	DefaultMessageSize = MaxMessageSize
+
+	shutdownPollIntervalMax = 500000000 // 500ms
 )
 
 // Server implements RCS Native TCP Protocol.
@@ -105,15 +109,46 @@ func (s *Server) ListenAndServeTLS(addr, certFile, keyFile string) error {
 }
 
 // Shutdown gracefully shuts down the server without interrupting any
-// active connections.
+// active connections. Waits until all connections are closed or until context
+// timeout runs out.
+//
+// Polling strategy taken from http.Server.Shutdown():
+// https://pkg.go.dev/net/http#Server.Shutdown.
 func (s *Server) Shutdown(ctx context.Context) error {
 	s.inShutdown.setTrue()
+	err := s.listener.Close()
+	if err != nil {
+		s.Logger.Error().Err(err).Msg("underlying tcp listener errored while closing")
+	}
 
-	// TODO: wait for all active conns to close and then gracefully shutdown the server
+	pollIntervalBase := time.Millisecond
+	nextPollInterval := func() time.Duration {
+		// Add 10% jitter.
+		interval := pollIntervalBase + time.Duration(rand.Intn(int(pollIntervalBase/10)))
+		// Double and clamp for next time.
+		pollIntervalBase *= 2
+		if pollIntervalBase > shutdownPollIntervalMax {
+			pollIntervalBase = shutdownPollIntervalMax
+		}
+		return interval
+	}
 
-	s.Logger.Info().Msg("native server has been shutdown")
-
-	return nil
+	timer := time.NewTimer(nextPollInterval())
+	defer func() {
+		timer.Stop()
+		s.Logger.Info().Msg("native server has been shutdown")
+	}()
+	for {
+		if s.numConns() == 0 {
+			return err
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-timer.C:
+			timer.Reset(nextPollInterval())
+		}
+	}
 }
 
 // Close immediately closes all active connections and underlying listener.
@@ -152,9 +187,13 @@ func (s *Server) serve(lis net.Listener) error {
 		}
 		conn, err := lis.Accept()
 		if err != nil {
-			// TODO: check error & return if critical
-			s.Logger.Error().Err(err).Msg("failed to accept connection")
-			continue
+			if !s.inShutdown.isSet() {
+				s.Logger.Error().Err(err).Msg("failed to accept connection")
+			}
+			if _, ok := err.(net.Error); ok {
+				continue
+			}
+			return err
 		}
 		s.Logger.Debug().Msg("Received new connection (" + conn.RemoteAddr().String() + ")")
 		s.mu.Lock()
@@ -346,6 +385,12 @@ func (s *Server) handleParsingError(conn net.Conn, parsingErr error) {
 	default:
 		resp.writeError(conn, nil, []byte("Unexpected error while parsing request"))
 	}
+}
+
+func (s *Server) numConns() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return len(s.activeConns)
 }
 
 // srvListener wraps a net.Listener to protect it from multiple Close() calls.

@@ -46,7 +46,7 @@ type Server struct {
 }
 
 // NewServer initializes a new Server instance ready to be used and returns a pointer to it.
-// You can also attach a Logger to returned Server by accessing public field Server.Logger.
+// A zerolog.Logger can be attached to returned Server by accessing public field Server.Logger.
 func NewServer(c *cache.CacheMap) *Server {
 	if c == nil {
 		c = cache.NewCacheMap()

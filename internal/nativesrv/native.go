@@ -25,6 +25,10 @@ const (
 	MaxMessageSize     = 1048576 // 1 MB
 	DefaultMessageSize = MaxMessageSize
 
+	// shutdownPollIntervalMax is used to limit polling interval
+	// when gracefully shutting down the server.
+	//
+	// See implementation of https://pkg.go.dev/net/http#Server.Shutdown.
 	shutdownPollIntervalMax = 500000000 // 500ms
 )
 
@@ -111,9 +115,6 @@ func (s *Server) ListenAndServeTLS(addr, certFile, keyFile string) error {
 // Shutdown gracefully shuts down the server without interrupting any
 // active connections. Waits until all connections are closed or until context
 // timeout runs out.
-//
-// Polling strategy taken from http.Server.Shutdown():
-// https://pkg.go.dev/net/http#Server.Shutdown.
 func (s *Server) Shutdown(ctx context.Context) error {
 	s.inShutdown.setTrue()
 	err := s.listener.Close()
@@ -121,6 +122,8 @@ func (s *Server) Shutdown(ctx context.Context) error {
 		s.Logger.Error().Err(err).Msg("underlying tcp listener errored while closing")
 	}
 
+	// Polling strategy taken from http.Server.Shutdown().
+	// See: https://pkg.go.dev/net/http#Server.Shutdown.
 	pollIntervalBase := time.Millisecond
 	nextPollInterval := func() time.Duration {
 		// Add 10% jitter.
@@ -256,6 +259,7 @@ MsgLoop:
 }
 
 func (s *Server) handleSet(conn net.Conn, req *request) {
+	s.Logger.Debug().Msg("received SET request from " + conn.RemoteAddr().String())
 	var resp = response{}
 
 	if len(req.key) == 0 {
@@ -275,6 +279,7 @@ func (s *Server) handleSet(conn net.Conn, req *request) {
 }
 
 func (s *Server) handleGet(conn net.Conn, req *request) {
+	s.Logger.Debug().Msg("received GET request from " + conn.RemoteAddr().String())
 	var resp = response{}
 
 	if len(req.key) == 0 {
@@ -298,6 +303,7 @@ func (s *Server) handleGet(conn net.Conn, req *request) {
 }
 
 func (s *Server) handleDelete(conn net.Conn, req *request) {
+	s.Logger.Debug().Msg("received DELETE request from " + conn.RemoteAddr().String())
 	var resp = response{}
 
 	if len(req.key) == 0 {
@@ -317,6 +323,7 @@ func (s *Server) handleDelete(conn net.Conn, req *request) {
 }
 
 func (s *Server) handlePurge(conn net.Conn, req *request) {
+	s.Logger.Debug().Msg("received PURGE request from " + conn.RemoteAddr().String())
 	var resp = response{}
 	s.cache.Purge()
 	resp.command = []byte("PURGE")
@@ -325,6 +332,7 @@ func (s *Server) handlePurge(conn net.Conn, req *request) {
 }
 
 func (s *Server) handleLength(conn net.Conn, req *request) {
+	s.Logger.Debug().Msg("received LENGTH request from " + conn.RemoteAddr().String())
 	var resp = response{}
 	length := s.cache.Length()
 	resp.command = []byte("LENGTH")
@@ -334,6 +342,7 @@ func (s *Server) handleLength(conn net.Conn, req *request) {
 }
 
 func (s *Server) handleKeys(conn net.Conn, req *request) {
+	s.Logger.Debug().Msg("received KEYS request from " + conn.RemoteAddr().String())
 	var resp = response{}
 	resp.command = []byte("KEYS")
 	keys := s.cache.Keys()
@@ -348,6 +357,7 @@ func (s *Server) handleKeys(conn net.Conn, req *request) {
 }
 
 func (s *Server) handlePing(conn net.Conn, req *request) {
+	s.Logger.Debug().Msg("received PING request from " + conn.RemoteAddr().String())
 	var resp = response{}
 	resp.command = []byte("PING")
 	resp.ok = true
@@ -356,6 +366,7 @@ func (s *Server) handlePing(conn net.Conn, req *request) {
 }
 
 func (s *Server) handleCloseConn(conn net.Conn, req *request) {
+	s.Logger.Debug().Msg("received CLOSE request from " + conn.RemoteAddr().String())
 	var resp = response{}
 	resp.command = []byte("CLOSE")
 	resp.ok = true
@@ -363,6 +374,7 @@ func (s *Server) handleCloseConn(conn net.Conn, req *request) {
 }
 
 func (s *Server) handleInvalidCommand(conn net.Conn, req *request) {
+	s.Logger.Debug().Msg("received invalid command from " + conn.RemoteAddr().String())
 	var resp = response{}
 	resp.ok = false
 	resp.message = []byte("Received invalid command")

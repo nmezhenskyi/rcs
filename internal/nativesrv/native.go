@@ -115,6 +115,9 @@ func (s *Server) ListenAndServeTLS(addr, certFile, keyFile string) error {
 // Shutdown gracefully shuts down the server without interrupting any
 // active connections. Waits until all connections are closed or until context
 // timeout runs out.
+//
+// Shutdown returns an error returned from closing the Server's underlying listener or
+// a context error.
 func (s *Server) Shutdown(ctx context.Context) error {
 	s.inShutdown.setTrue()
 	err := s.listener.Close()

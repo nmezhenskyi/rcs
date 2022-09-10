@@ -16,6 +16,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
+// Server implements RCS HTTP API according to specification.
 type Server struct {
 	server *http.Server
 	router *httprouter.Router
@@ -24,6 +25,8 @@ type Server struct {
 	Logger zerolog.Logger // By defaut Logger is disabled, but can be manually attached.
 }
 
+// NewServer initializes a new Server instance ready to be used and returns a pointer to it.
+// A zerolog.Logger can be attached to returned Server by accessing public field Server.Logger.
 func NewServer(c *cache.CacheMap) *Server {
 	if c == nil {
 		c = cache.NewCacheMap()
@@ -49,10 +52,15 @@ func NewServer(c *cache.CacheMap) *Server {
 	return s
 }
 
+// ServeHTTP makes the server implement the http.Handler interface.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.router.ServeHTTP(w, r)
 }
 
+// ListenAndServe listens on the given TCP network address addr and
+// handles requests on incoming connections according to RCS HTTP API specification.
+//
+// Unlike http.Server, it does not return ErrServerClosed after Shutdown or Close.
 func (s *Server) ListenAndServe(addr string) error {
 	s.server.Addr = addr
 	s.Logger.Info().Msg("Starting http server on " + addr)
@@ -66,6 +74,10 @@ func (s *Server) ListenAndServe(addr string) error {
 	return err
 }
 
+// ListenAndServeTLS listens on the given TCP network address addr and
+// handles requests on incoming TLS connections according to RCS HTTP API specification.
+//
+// Unlike http.Server, it does not return ErrServerClosed after Shutdown or Close.
 func (s *Server) ListenAndServeTLS(addr, certFile, keyFile string) error {
 	s.server.Addr = addr
 	s.Logger.Info().Msg("Starting tls http server on " + addr)
@@ -79,6 +91,12 @@ func (s *Server) ListenAndServeTLS(addr, certFile, keyFile string) error {
 	return err
 }
 
+// Shutdown gracefully shuts down the server without interrupting any
+// active connections. Waits until all connections are closed or until context
+// timeout runs out. Once Shutdown has been called on a server, it may not be reused.
+//
+// Shutdown returns an error returned from closing the Server's underlying listener or
+// a context error.
 func (s *Server) Shutdown(ctx context.Context) error {
 	err := s.server.Shutdown(ctx)
 	if err != nil {
@@ -89,14 +107,17 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	return err
 }
 
+// Close immediately closes all active connections and underlying listener.
+// For a graceful shutdown, use Shutdown. Once Close has been called on a server,
+// it may not be reused.
+//
+// Close returns any error returned from closing the Server's underlying listener.
 func (s *Server) Close() error {
 	err := s.server.Close()
 	if err != nil {
 		s.Logger.Error().Err(err).Msg("http server has been closed & returned error")
 	} else {
 		s.Logger.Info().Msg("http server has been closed")
-
-		s.Logger.With().Str("", "")
 	}
 	return err
 }
@@ -116,7 +137,7 @@ func (s *Server) handleSet() httprouter.Handle {
 		Value string `json:"value"`
 	}
 	return func(w http.ResponseWriter, req *http.Request, p httprouter.Params) {
-		s.Logger.Debug().Msg("received http PUT \"/SET/:key\" request")
+		s.Logger.Debug().Msg("received http PUT \"/SET/:key\" request from " + req.RemoteAddr)
 
 		key := p.ByName("key")
 		if key == "" {
@@ -146,8 +167,8 @@ func (s *Server) handleSet() httprouter.Handle {
 }
 
 func (s *Server) handleGet() httprouter.Handle {
-	return func(w http.ResponseWriter, _ *http.Request, p httprouter.Params) {
-		s.Logger.Debug().Msg("received http GET \"/GET/:key\" request")
+	return func(w http.ResponseWriter, req *http.Request, p httprouter.Params) {
+		s.Logger.Debug().Msg("received http GET \"/GET/:key\" request from " + req.RemoteAddr)
 
 		key := p.ByName("key")
 		if key == "" {
@@ -168,8 +189,8 @@ func (s *Server) handleGet() httprouter.Handle {
 }
 
 func (s *Server) handleDelete() httprouter.Handle {
-	return func(w http.ResponseWriter, _ *http.Request, p httprouter.Params) {
-		s.Logger.Debug().Msg("received http DELETE \"/DELETE/:key\" request")
+	return func(w http.ResponseWriter, req *http.Request, p httprouter.Params) {
+		s.Logger.Debug().Msg("received http DELETE \"/DELETE/:key\" request from " + req.RemoteAddr)
 
 		key := p.ByName("key")
 		if key == "" {
@@ -189,8 +210,8 @@ func (s *Server) handleDelete() httprouter.Handle {
 }
 
 func (s *Server) handlePurge() httprouter.Handle {
-	return func(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
-		s.Logger.Debug().Msg("received http DELETE \"/PURGE\" request")
+	return func(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+		s.Logger.Debug().Msg("received http DELETE \"/PURGE\" request from " + req.RemoteAddr)
 		s.cache.Purge()
 		res := httpResponse{
 			Command: "FLUSH",
@@ -201,8 +222,8 @@ func (s *Server) handlePurge() httprouter.Handle {
 }
 
 func (s *Server) handleLength() httprouter.Handle {
-	return func(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
-		s.Logger.Debug().Msg("received http GET \"/LENGTH\" request")
+	return func(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+		s.Logger.Debug().Msg("received http GET \"/LENGTH\" request from " + req.RemoteAddr)
 		length := s.cache.Length()
 		res := httpResponse{
 			Command: "LENGTH",
@@ -214,8 +235,8 @@ func (s *Server) handleLength() httprouter.Handle {
 }
 
 func (s *Server) handleKeys() httprouter.Handle {
-	return func(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
-		s.Logger.Debug().Msg("received http GET \"/KEYS\" request")
+	return func(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+		s.Logger.Debug().Msg("received http GET \"/KEYS\" request from " + req.RemoteAddr)
 		keys := s.cache.Keys()
 		res := httpResponse{
 			Command: "KEYS",
@@ -227,8 +248,8 @@ func (s *Server) handleKeys() httprouter.Handle {
 }
 
 func (s *Server) handlePing() httprouter.Handle {
-	return func(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
-		s.Logger.Debug().Msg("received http GET \"/PING\" request")
+	return func(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+		s.Logger.Debug().Msg("received http GET \"/PING\" request from " + req.RemoteAddr)
 		sendJSON(w, 200, httpResponse{Command: "PING", Message: "PONG", Ok: true})
 	}
 }

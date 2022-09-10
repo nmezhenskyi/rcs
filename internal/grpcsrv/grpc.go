@@ -15,6 +15,7 @@ import (
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/peer"
 )
 
 // Server implements RCS gRPC service.
@@ -111,6 +112,12 @@ func (s *Server) Close() {
 }
 
 func (s *Server) Set(ctx context.Context, in *pb.SetRequest) (*pb.SetReply, error) {
+	p, ok := peer.FromContext(ctx)
+	if ok {
+		s.Logger.Debug().Msg("received grpc SET request from " + p.Addr.String())
+	} else {
+		s.Logger.Debug().Msg("received grpc SET request, peer information unavailable")
+	}
 	key := in.GetKey()
 	value := in.GetValue()
 	if len(key) == 0 {
@@ -124,6 +131,12 @@ func (s *Server) Set(ctx context.Context, in *pb.SetRequest) (*pb.SetReply, erro
 }
 
 func (s *Server) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+	p, ok := peer.FromContext(ctx)
+	if ok {
+		s.Logger.Debug().Msg("received grpc GET request from " + p.Addr.String())
+	} else {
+		s.Logger.Debug().Msg("received grpc GET request, peer information unavailable")
+	}
 	key := in.GetKey()
 	if len(key) == 0 {
 		return &pb.GetReply{Key: key, Ok: false, Message: "Key cannot be empty"}, nil
@@ -136,6 +149,12 @@ func (s *Server) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, erro
 }
 
 func (s *Server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.DeleteReply, error) {
+	p, ok := peer.FromContext(ctx)
+	if ok {
+		s.Logger.Debug().Msg("received grpc DELETE request from " + p.Addr.String())
+	} else {
+		s.Logger.Debug().Msg("received grpc DELETE request, peer information unavailable")
+	}
 	key := in.GetKey()
 	if len(key) == 0 {
 		return &pb.DeleteReply{Key: key, Ok: false, Message: "Key cannot be empty"}, nil
@@ -145,20 +164,44 @@ func (s *Server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.DeleteRe
 }
 
 func (s *Server) Purge(ctx context.Context, in *pb.PurgeRequest) (*pb.PurgeReply, error) {
+	p, ok := peer.FromContext(ctx)
+	if ok {
+		s.Logger.Debug().Msg("received grpc PURGE request from " + p.Addr.String())
+	} else {
+		s.Logger.Debug().Msg("received grpc PURGE request, peer information unavailable")
+	}
 	s.cache.Purge()
 	return &pb.PurgeReply{Ok: true}, nil
 }
 
 func (s *Server) Length(ctx context.Context, in *pb.LengthRequest) (*pb.LengthReply, error) {
+	p, ok := peer.FromContext(ctx)
+	if ok {
+		s.Logger.Debug().Msg("received grpc LENGTH request from " + p.Addr.String())
+	} else {
+		s.Logger.Debug().Msg("received grpc LENGTH request, peer information unavailable")
+	}
 	length := s.cache.Length()
 	return &pb.LengthReply{Length: int64(length), Ok: true}, nil
 }
 
 func (s *Server) Keys(ctx context.Context, in *pb.KeysRequest) (*pb.KeysReply, error) {
+	p, ok := peer.FromContext(ctx)
+	if ok {
+		s.Logger.Debug().Msg("received grpc KEYS request from " + p.Addr.String())
+	} else {
+		s.Logger.Debug().Msg("received grpc KEYS request, peer information unavailable")
+	}
 	keys := s.cache.Keys()
 	return &pb.KeysReply{Keys: keys, Ok: true}, nil
 }
 
 func (s *Server) Ping(ctx context.Context, in *pb.PingRequest) (*pb.PingReply, error) {
+	p, ok := peer.FromContext(ctx)
+	if ok {
+		s.Logger.Debug().Msg("received grpc PING request from " + p.Addr.String())
+	} else {
+		s.Logger.Debug().Msg("received grpc PING request, peer information unavailable")
+	}
 	return &pb.PingReply{Message: "PONG", Ok: true}, nil
 }

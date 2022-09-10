@@ -114,7 +114,7 @@ func (s *Server) ListenAndServeTLS(addr, certFile, keyFile string) error {
 
 // Shutdown gracefully shuts down the server without interrupting any
 // active connections. Waits until all connections are closed or until context
-// timeout runs out.
+// timeout runs out. Once Shutdown has been called on a server, it may not be reused.
 //
 // Shutdown returns an error returned from closing the Server's underlying listener or
 // a context error.
@@ -158,7 +158,8 @@ func (s *Server) Shutdown(ctx context.Context) error {
 }
 
 // Close immediately closes all active connections and underlying listener.
-// For a graceful shutdown, use Shutdown.
+// For a graceful shutdown, use Shutdown. Once Close has been called on a server,
+// it may not be reused.
 //
 // Close returns any error returned from closing the Server's underlying listener.
 func (s *Server) Close() error {

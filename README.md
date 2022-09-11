@@ -34,19 +34,29 @@ to build a binary containing only APIs that you need.
 
 ### Native
 
-In progress...
+Native API uses a custom application layer protocol (RCSP) built on top of TCP/IP. The complete
+specification can be found [here](https://github.com/nmezhenskyi/rcs/blob/main/api/native/rcs.md).
+The API supports and encourages long-living connections over one-off requests. There are no client
+libraries for the RCSP yet, so you would have to implement one according to the specification.
+The API supports SSL connections.
 
 ### gRPC
 
-In progress...
+gRPC API uses `rcs.proto` file, which can be found
+[here](https://github.com/nmezhenskyi/rcs/blob/main/api/protobuf/rcs.proto),
+to generate the service and proto messages. You should use this file to generate client bindings with
+`protoc`. The API supports SSL connections.
 
 ### HTTP
 
-In progress...
+HTTP API exposes HTTP end-points and communicates using JSON payloads. The OpenAPI specification can be
+found [here](https://github.com/nmezhenskyi/rcs/blob/main/api/openapi/rcs.yaml).
 
 ## Internals
 
-In progress...
+Internally, RCS uses a hash table with strings as keys and stores values in binary representation.
+In future releases RCS will support multiple storage & eviction strategies, as well as cache serialization
+to disk storage.
 
 ## Getting Started
 

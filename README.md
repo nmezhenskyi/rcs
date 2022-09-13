@@ -27,7 +27,7 @@ with the cache server over HTTP with JSON payloads. Likewise, if your project al
 to communicate between services, it would make sense to use it for RCS as well.
 In a situation where you want to keep data communication minimalistic without unnecessary
 dependencies (i.e., in a network of Raspberry Pis), the Native API would be a good choice.
-Most importantly, you can use all three of these APIs simultaneously.  
+More importantly, you can use all three of these APIs simultaneously.  
 
 In addition, you can disable APIs that you are not using. In the future it will also be possible
 to build a binary containing only APIs that you need.

@@ -1,3 +1,5 @@
+//go:build !rmgrpc
+
 package grpcsrv
 
 import (

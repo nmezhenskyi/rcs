@@ -1,3 +1,5 @@
+//go:build !rmgrpc
+
 // Package grpcsrv implements gRPC server.
 //
 // See Protobuf specification at https://github.com/nmezhenskyi/rcs/blob/main/api/protobuf/rcs.proto.
@@ -30,7 +32,7 @@ type Server struct {
 }
 
 // NewServer initializes a new grpc Server instance ready to be used and returns a pointer to it.
-// You can also attach a Logger to return Server by accessing public field Server.Logger.
+// A zerolog.Logger can be attached to returned Server by accessing public field Server.Logger.
 func NewServer(c *cache.CacheMap, opts ...grpc.ServerOption) *Server {
 	if c == nil {
 		c = cache.NewCacheMap()

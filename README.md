@@ -1,6 +1,7 @@
 # RCS
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/nmezhenskyi/rcs)](https://goreportcard.com/report/github.com/nmezhenskyi/rcs)
+![Build Workflow](https://github.com/nmezhenskyi/rcs/actions/workflows/go.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/nmezhenskyi/rcs/blob/main/LICENSE.md)
 
 RCS, which stands for Remote Caching Server, is an in-memory key-value data store written in Go.

@@ -30,8 +30,9 @@ In a situation where you want to keep data communication minimalistic without un
 dependencies (i.e., in a network of Raspberry Pis), the Native API would be a good choice.
 More importantly, you can use all three of these APIs simultaneously.  
 
-In addition, you can disable APIs that you are not using. In the future it will also be possible
-to build a binary containing only APIs that you need.
+In addition, you can disable APIs that you are not using. It is also possible to completely remove HTTP
+and/or gRPC APIs together with their related dependencies from the binary. To do this you need to use
+build tags `rmgrpc` and/or `rmhttp`.
 
 ### Native
 

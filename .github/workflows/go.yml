@@ -17,9 +17,25 @@ jobs:
       uses: actions/setup-go@v3
       with:
         go-version: 1.18
+        
+    - name: Install Protoc
+      uses: arduino/setup-protoc@v1
+      with:
+        version: '3.x'
+        
+    - name: Installing protoc-gen-go
+      run: |
+        go get github.com/golang/protobuf/protoc-gen-go
+        go get google.golang.org/grpc/cmd/protoc-gen-go-grpc
 
     - name: Build
-      run: go build -v ./cmd
+      run: |
+        mkdir -p internal/genproto
+        protoc --proto_path=api/protobuf \
+        --go_out=internal/genproto --go_opt=paths=source_relative \
+        --go-grpc_out=internal/genproto --go-grpc_opt=paths=source_relative \
+        rcs.proto
+        go build -v ./cmd
 
     - name: Test
       run: go test -v ./internal/**

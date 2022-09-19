@@ -32,7 +32,7 @@ More importantly, you can use all three of these APIs simultaneously.
 
 In addition, you can disable APIs that you are not using. It is also possible to completely remove HTTP
 and/or gRPC APIs together with their related dependencies from the binary. To do this you need to use
-build tags `rmgrpc` and/or `rmhttp`.
+build tags `rmhttp` and/or `rmgrpc`.
 
 ### Native
 

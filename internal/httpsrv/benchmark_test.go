@@ -1,3 +1,5 @@
+//go:build !rmhttp
+
 package httpsrv
 
 import (

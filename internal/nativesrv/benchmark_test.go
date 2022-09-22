@@ -35,3 +35,11 @@ func BenchmarkSet(b *testing.B) {
 		}
 	}
 }
+
+func BenchmarkParseRequest(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		parseRequest([]byte(
+			"RCSP/1.0 SET\r\nKEY: apollo\r\nVALUE: Apollo is one of the Olympian deities in classical Greek and Roman religion and Greek and Roman mythology. (From Wikipedia, the free encyclopedia)\r\n",
+		))
+	}
+}

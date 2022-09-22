@@ -23,7 +23,7 @@ import (
 
 const (
 	MaxMessageSize     = 1048576 // 1 MB
-	DefaultMessageSize = MaxMessageSize
+	DefaultMessageSize = 4096
 
 	// shutdownPollIntervalMax is used to limit polling interval
 	// when gracefully shutting down the server.
@@ -225,7 +225,7 @@ func (s *Server) handleConnection(conn net.Conn) {
 
 MsgLoop:
 	for {
-		buf := make([]byte, DefaultMessageSize)
+		buf := make([]byte, DefaultMessageSize) // TODO: dynamically adjust buffer size
 		n, err := conn.Read(buf)
 		if n == 0 || err != nil {
 			s.Logger.Error().Err(err).Msg(fmt.Sprintf("error while reading from %s", conn.RemoteAddr()))

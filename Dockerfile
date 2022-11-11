@@ -1,33 +1,44 @@
-# syntax=docker/dockerfile:1
+# Stage 0: compile proto files
 
-FROM golang:1.19-alpine3.15
+FROM golang:1.19.3-bullseye@sha256:34e901ebac66df44ce97b56a9e1bb407307e54fe13e843d6c59da7826ce4dd2c AS protoc
 
-WORKDIR /usr/local/rcs
+ENV PATH="${PATH}:$(go env GOPATH)/bin"
 
-RUN apk update && apk add curl bash unzip build-base autoconf automake libtool make g++ git
+WORKDIR /tmp
 
-ENV PROTOBUF_VERSION 3.19.4
-ENV PROTOBUF_URL https://github.com/google/protobuf/releases/download/v"$PROTOBUF_VERSION"/protobuf-cpp-"$PROTOBUF_VERSION".zip
-RUN curl --silent -L -o protobuf.zip "$PROTOBUF_URL" && \
-   unzip protobuf.zip && \
-   cd protobuf-"$PROTOBUF_VERSION" && \
-   ./configure && \
-   make -j$(nproc) && \
-   make install && \
-   cd .. && rm protobuf.zip
+RUN apt-get update && apt install -y protobuf-compiler
 
-RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28
-RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
-RUN export PATH="$PATH:$(go env GOPATH)/bin"
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28 && \
+   go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
 
-COPY go.mod .
-COPY go.sum .
+COPY ./api/protobuf ./protobuf
+
+RUN mkdir genproto && \
+   protoc --proto_path=protobuf \
+	--go_out=genproto --go_opt=paths=source_relative \
+	--go-grpc_out=genproto --go-grpc_opt=paths=source_relative \
+	$(find ./protobuf -iname "*.proto")
+
+#####################################################################
+
+# Stage 1: build the binary
+
+FROM golang:1.19.3-alpine3.16@sha256:5dca1a586da5bc601c77a50d489d7fa752fa3fdd2fb22fd3f8f5b4b2f77181d6 AS build
+
+WORKDIR /usr/local/src/rcs
+
+COPY --from=protoc /tmp/genproto ./internal/genproto
+
+COPY go.mod go.sum ./
 
 RUN go mod download
 
-COPY . .
+COPY . ./
 
-RUN make genproto
-RUN make build
+RUN go build -o /usr/local/bin/rcs ./cmd
 
-CMD ./bin/rcs
+EXPOSE 6121 6122 6123
+
+CMD ["/usr/local/bin/rcs"]
+
+#####################################################################

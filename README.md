@@ -104,7 +104,7 @@ To run RCS you would need to first create the configuration file `rcs.json`.
 ### Containerize
 
 There is a ready-to-use [Dockerfile](https://github.com/nmezhenskyi/rcs/blob/main/Dockerfile) based
-on Alpine Linux.
+on Alpine Linux. Also available on [Docker Hub](https://hub.docker.com/repository/docker/nmezhenskyi/rcs).
 
 ## Contributing
 

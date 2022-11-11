@@ -1,7 +1,7 @@
 {
    "native": {
       "activate": true,
-      "port": 5000,
+      "port": 6121,
       "onLocalhost": true,
       "tls": false,
       "certFile": "",
@@ -9,7 +9,7 @@
    },
    "grpc": {
       "activate": true,
-      "port": 5001,
+      "port": 6122,
       "onLocalhost": true,
       "tls": false,
       "certFile": "",
@@ -17,11 +17,13 @@
    },
    "http": {
       "activate": true,
-      "port": 5002,
+      "port": 6123,
       "onLocalhost": true,
       "tls": false,
       "certFile": "",
       "keyFile": ""
    },
-   "verbosity": "dev"
+   "verbosity": "dev",
+
+   "saveOnShutdown": true
 }

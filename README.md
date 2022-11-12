@@ -52,7 +52,7 @@ to generate the service and proto messages. You should use this file to generate
 ### HTTP
 
 HTTP API exposes HTTP end-points and communicates using JSON payloads. The OpenAPI specification can be
-found [here](https://github.com/nmezhenskyi/rcs/blob/main/api/openapi/rcs.yaml).
+found [here](https://github.com/nmezhenskyi/rcs/blob/main/api/openapi/rcs.yaml). The API supports SSL connections.
 
 ## Internals
 
@@ -66,9 +66,9 @@ to disk storage.
 
 Prerequisites:
 
-- Go 1.18 compiler and tools
+- Go +1.18 compiler and tools
 - Protocol buffer compiler v3
-- Go plugins for protoc
+- Go plugins for protocol buffer compiler
 - GNU Make (optional)
 
 Steps:
@@ -99,7 +99,42 @@ and create the binary in the `./bin` directory.
 
 ### Run
 
-To run RCS you would need to first create the configuration file `rcs.json`.
+To run RCS you would need to provide it with the configuration file `rcs.json`. 
+By default, it looks for `./rcs.json` but you can specify a different path using `-c <path>` switch.
+
+#### Example Configuration File:
+
+```json
+{
+   "native": {
+      "activate": true,
+      "port": 6121,
+      "onLocalhost": true,
+      "tls": false,
+      "certFile": "",
+      "keyFile": ""
+   },
+   "grpc": {
+      "activate": true,
+      "port": 6122,
+      "onLocalhost": true,
+      "tls": false,
+      "certFile": "",
+      "keyFile": ""
+   },
+   "http": {
+      "activate": true,
+      "port": 6123,
+      "onLocalhost": true,
+      "tls": false,
+      "certFile": "",
+      "keyFile": ""
+   },
+   "verbosity": "dev",
+
+   "saveOnShutdown": true
+}
+```
 
 ### Containerize
 

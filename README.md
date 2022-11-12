@@ -66,6 +66,7 @@ to disk storage.
 
 Prerequisites:
 
+- Unix-like OS (tested on macOS and Ubuntu)
 - Go +1.18 compiler and tools
 - Protocol buffer compiler v3
 - Go plugins for protocol buffer compiler

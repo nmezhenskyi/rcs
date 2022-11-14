@@ -26,7 +26,7 @@ func TestSet(t *testing.T) {
 	if !ok {
 		t.Error("Key has not been set")
 	}
-	if bytes.Compare(retrieved, value) != 0 {
+	if bytes.Compare(retrieved.data, value) != 0 {
 		t.Error("Retrieved value is not the same")
 	}
 
@@ -51,7 +51,7 @@ func TestGet(t *testing.T) {
 		t.Errorf("Found nonexistent key")
 	}
 
-	cmap.items = map[string][]byte{key: value}
+	cmap.items = map[string]item{key: {data: value}}
 	retrieved, ok := cmap.Get(key)
 	if !ok {
 		t.Error("Key not found")
@@ -63,12 +63,12 @@ func TestGet(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	cmap := NewCacheMap()
-	cmap.items = map[string][]byte{
-		"key1": []byte("value1"),
-		"key2": []byte("value2"),
-		"key3": []byte("value3"),
-		"key4": []byte("value4"),
-		"key5": []byte("value5"),
+	cmap.items = map[string]item{
+		"key1": {data: []byte("value1")},
+		"key2": {data: []byte("value2")},
+		"key3": {data: []byte("value3")},
+		"key4": {data: []byte("value4")},
+		"key5": {data: []byte("value5")},
 	}
 
 	cmap.Delete("key2")
@@ -81,12 +81,12 @@ func TestDelete(t *testing.T) {
 
 func TestPurge(t *testing.T) {
 	cmap := NewCacheMap()
-	cmap.items = map[string][]byte{
-		"key1": []byte("value1"),
-		"key2": []byte("value2"),
-		"key3": []byte("value3"),
-		"key4": []byte("value4"),
-		"key5": []byte("value5"),
+	cmap.items = map[string]item{
+		"key1": {data: []byte("value1")},
+		"key2": {data: []byte("value2")},
+		"key3": {data: []byte("value3")},
+		"key4": {data: []byte("value4")},
+		"key5": {data: []byte("value5")},
 	}
 
 	cmap.Purge()
@@ -97,12 +97,12 @@ func TestPurge(t *testing.T) {
 
 func TestLength(t *testing.T) {
 	cmap := NewCacheMap()
-	cmap.items = map[string][]byte{
-		"key1": []byte("value1"),
-		"key2": []byte("value2"),
-		"key3": []byte("value3"),
-		"key4": []byte("value4"),
-		"key5": []byte("value5"),
+	cmap.items = map[string]item{
+		"key1": {data: []byte("value1")},
+		"key2": {data: []byte("value2")},
+		"key3": {data: []byte("value3")},
+		"key4": {data: []byte("value4")},
+		"key5": {data: []byte("value5")},
 	}
 
 	length := cmap.Length()
@@ -113,12 +113,12 @@ func TestLength(t *testing.T) {
 
 func TestKeys(t *testing.T) {
 	cmap := NewCacheMap()
-	cmap.items = map[string][]byte{
-		"key1": []byte("value1"),
-		"key2": []byte("value2"),
-		"key3": []byte("value3"),
-		"key4": []byte("value4"),
-		"key5": []byte("value5"),
+	cmap.items = map[string]item{
+		"key1": {data: []byte("value1")},
+		"key2": {data: []byte("value2")},
+		"key3": {data: []byte("value3")},
+		"key4": {data: []byte("value4")},
+		"key5": {data: []byte("value5")},
 	}
 	expectedKeys := []string{"key1", "key2", "key3", "key4", "key5"}
 

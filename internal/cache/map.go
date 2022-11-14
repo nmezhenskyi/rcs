@@ -3,31 +3,31 @@ package cache
 import "sync"
 
 // CacheMap represents in-memory key-value table safe for concurrent usage.
-// Uses strings as keys. Stores byte slices.
+// Uses strings as keys. Stores items with byte slices and expiration time.
 type CacheMap struct {
 	mu    sync.RWMutex
-	items map[string][]byte
+	items map[string]item
 }
 
 // NewCacheMap returns pointer to initialized CacheMap.
 func NewCacheMap() *CacheMap {
-	return &CacheMap{items: make(map[string][]byte)}
+	return &CacheMap{items: make(map[string]item)}
 }
 
 // Set sets given value for the given key, possible overwriting it.
 func (cm *CacheMap) Set(key string, value []byte) {
 	cm.mu.Lock()
-	cm.items[key] = value
+	cm.items[key] = item{data: value}
 	cm.mu.Unlock()
 }
 
 // Get finds the value for given key. The second return value
 // is a bool that specifies whether the key is present.
-func (cm *CacheMap) Get(key string) (value []byte, ok bool) {
+func (cm *CacheMap) Get(key string) ([]byte, bool) {
 	cm.mu.RLock()
-	value, ok = cm.items[key]
+	value, ok := cm.items[key]
 	cm.mu.RUnlock()
-	return value, ok
+	return value.data, ok
 }
 
 // Delete removes the key and associated value from the map.
@@ -41,7 +41,7 @@ func (cm *CacheMap) Delete(key string) {
 // Purge removes all keys from the map making it empty.
 func (cm *CacheMap) Purge() {
 	cm.mu.Lock()
-	cm.items = make(map[string][]byte)
+	cm.items = make(map[string]item)
 	cm.mu.Unlock()
 }
 

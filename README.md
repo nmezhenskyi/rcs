@@ -1,4 +1,6 @@
-# RCS
+<h1>
+   <img src=".github/assets/logo.png" alt="drawing" width="200"/>
+</h1>
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/nmezhenskyi/rcs)](https://goreportcard.com/report/github.com/nmezhenskyi/rcs)
 ![Build Workflow](https://github.com/nmezhenskyi/rcs/actions/workflows/ci.yml/badge.svg)

@@ -22,7 +22,7 @@ func TestNewServer(t *testing.T) {
 
 func TestSet(t *testing.T) {
 	server := NewServer(nil)
-	serverAddr := "localhost:5000"
+	serverAddr := "localhost:6121"
 	go func() {
 		if err := server.ListenAndServe(serverAddr); err != nil {
 			t.Errorf("Server failed: %v", err)
@@ -161,7 +161,7 @@ func TestSet(t *testing.T) {
 
 func TestGet(t *testing.T) {
 	server := NewServer(nil)
-	serverAddr := "localhost:5000"
+	serverAddr := "localhost:6121"
 	go func() {
 		if err := server.ListenAndServe(serverAddr); err != nil {
 			t.Errorf("Server failed: %v", err)
@@ -275,7 +275,7 @@ func TestGet(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	server := NewServer(nil)
-	serverAddr := "localhost:5000"
+	serverAddr := "localhost:6121"
 	go func() {
 		if err := server.ListenAndServe(serverAddr); err != nil {
 			t.Errorf("Server failed: %v", err)
@@ -380,7 +380,7 @@ func TestDelete(t *testing.T) {
 
 func TestPurge(t *testing.T) {
 	server := NewServer(nil)
-	serverAddr := "localhost:5000"
+	serverAddr := "localhost:6121"
 	go func() {
 		if err := server.ListenAndServe(serverAddr); err != nil {
 			t.Errorf("Server failed: %v", err)
@@ -445,7 +445,7 @@ func TestPurge(t *testing.T) {
 
 func TestLength(t *testing.T) {
 	server := NewServer(nil)
-	serverAddr := "localhost:5000"
+	serverAddr := "localhost:6121"
 	go func() {
 		if err := server.ListenAndServe(serverAddr); err != nil {
 			t.Errorf("Server failed: %v", err)
@@ -514,7 +514,7 @@ func TestLength(t *testing.T) {
 
 func TestKeys(t *testing.T) {
 	server := NewServer(nil)
-	serverAddr := "localhost:5000"
+	serverAddr := "localhost:6121"
 	go func() {
 		if err := server.ListenAndServe(serverAddr); err != nil {
 			t.Errorf("Server failed: %v", err)
@@ -585,7 +585,7 @@ func TestKeys(t *testing.T) {
 
 func TestPing(t *testing.T) {
 	server := NewServer(nil)
-	serverAddr := "localhost:5000"
+	serverAddr := "localhost:6121"
 	go func() {
 		if err := server.ListenAndServe(serverAddr); err != nil {
 			t.Errorf("Server failed: %v", err)
@@ -643,7 +643,7 @@ func TestPing(t *testing.T) {
 
 func TestClose(t *testing.T) {
 	server := NewServer(nil)
-	serverAddr := "localhost:5000"
+	serverAddr := "localhost:6121"
 	go func() {
 		if err := server.ListenAndServe(serverAddr); err != nil {
 			t.Errorf("Server failed: %v", err)

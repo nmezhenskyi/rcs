@@ -23,12 +23,12 @@ func TestItemIsExpired(t *testing.T) {
 		},
 		{
 			name:     "Expired",
-			i:        item{[]byte(""), time.Now().UnixNano() - 100000},
+			i:        item{[]byte(""), time.Now().UnixNano() - 10000000},
 			expected: true,
 		},
 		{
 			name:     "Not expired",
-			i:        item{[]byte(""), time.Now().UnixNano() + 100000},
+			i:        item{[]byte(""), time.Now().UnixNano() + 10000000},
 			expected: false,
 		},
 	}

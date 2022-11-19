@@ -1,3 +1,4 @@
+// Package cache contains all internal cache implementations for RCS.
 package cache
 
 import "sync"
@@ -14,10 +15,18 @@ func NewCacheMap() *CacheMap {
 	return &CacheMap{items: make(map[string]item)}
 }
 
-// Set sets given value for the given key, possible overwriting it.
+// Set sets given value for the given key, possibly overwriting it.
 func (cm *CacheMap) Set(key string, value []byte) {
 	cm.mu.Lock()
 	cm.items[key] = item{data: value}
+	cm.mu.Unlock()
+}
+
+// SetEx sets given value for the given key, and an expiration time.
+// Overwrites the previous value for the key.
+func (cm *CacheMap) SetEx(key string, value []byte, expires int64) {
+	cm.mu.Lock()
+	cm.items[key] = item{data: value, expires: expires}
 	cm.mu.Unlock()
 }
 

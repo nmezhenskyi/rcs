@@ -11,7 +11,7 @@ func TestNewCacheMap(t *testing.T) {
 	if cmap == nil {
 		t.Error("Expected pointer to initialized CacheMap, got nil instead")
 	}
-	if cmap.items == nil {
+	if cmap != nil && cmap.items == nil {
 		t.Error("CacheMap.items field is nil")
 	}
 }
@@ -26,7 +26,7 @@ func TestSet(t *testing.T) {
 	if !ok {
 		t.Error("Key has not been set")
 	}
-	if bytes.Compare(retrieved.data, value) != 0 {
+	if !bytes.Equal(retrieved.data, value) {
 		t.Error("Retrieved value is not the same")
 	}
 
@@ -38,6 +38,25 @@ func TestSet(t *testing.T) {
 
 	if len(cmap.items) != 5 {
 		t.Errorf("Expected 5 keys, but got %d", len(cmap.items))
+	}
+}
+
+func TestSetEx(t *testing.T) {
+	cmap := NewCacheMap()
+	key := "key1"
+	value := []byte("value1")
+	expires := int64(1668819947000)
+	cmap.SetEx(key, value, expires)
+
+	retrieved, ok := cmap.items[key]
+	if !ok {
+		t.Error("Key has not been set")
+	}
+	if !bytes.Equal(retrieved.data, value) {
+		t.Error("Retrieved value is not the same")
+	}
+	if retrieved.expires != expires {
+		t.Error("Stored expires time does not match the given value")
 	}
 }
 
@@ -56,7 +75,7 @@ func TestGet(t *testing.T) {
 	if !ok {
 		t.Error("Key not found")
 	}
-	if bytes.Compare(retrieved, value) != 0 {
+	if !bytes.Equal(retrieved, value) {
 		t.Error("Retrieved value is not the same")
 	}
 }

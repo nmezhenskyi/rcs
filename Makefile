@@ -1,18 +1,20 @@
-.PHONY: build dev run test tidy clean cleanproto cleanall
+.PHONY: build genproto dev run test tidy clean cleanproto cleanall
 
 PROTO_IN_DIR := api/protobuf
 PROTO_OUT_DIR := internal/genproto
 PROTOS := $(wildcard $(PROTO_IN_DIR)/*.proto)
 
-genproto: $(PROTOS)
-	mkdir -p $(PROTO_OUT_DIR)
+$(PROTO_OUT_DIR): $(PROTOS)
+	mkdir -p $@
 	protoc --proto_path=$(PROTO_IN_DIR) \
-		--go_out=$(PROTO_OUT_DIR) --go_opt=paths=source_relative \
-		--go-grpc_out=$(PROTO_OUT_DIR) --go-grpc_opt=paths=source_relative \
+		--go_out=$@ --go_opt=paths=source_relative \
+		--go-grpc_out=$@ --go-grpc_opt=paths=source_relative \
 		$(PROTOS)
 
-build: genproto
+build: $(PROTO_OUT_DIR)
 	go build -o ./bin/rcs ./cmd
+
+genproto: $(PROTO_OUT_DIR)
 
 dev:
 	go run ./cmd
@@ -30,7 +32,7 @@ clean:
 	-@rm -r ./bin 2>/dev/null || true
 
 cleanproto:
-	-@rm -r ./internal/genproto 2>/dev/null || true
+	-@rm -r $(PROTO_OUT_DIR) 2>/dev/null || true
 
 cleanall: clean cleanproto
 

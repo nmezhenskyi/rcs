@@ -97,7 +97,7 @@ Steps:
 Alternatively if you have Make installed:
 
 1. Clone the repository: `git clone https://github.com/nmezhenskyi/rcs.git`.
-2. Run `make setup` command. This will generate protobuf and grpc files, build the project,
+2. Run `make build` command. This will generate protobuf and grpc files, build the project,
 and create the binary in the `./bin` directory.
 
 ### Run

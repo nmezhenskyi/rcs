@@ -15,7 +15,7 @@ func TestNewServer(t *testing.T) {
 	if server == nil {
 		t.Error("Expected pointer to initialized Server, got nil instead")
 	}
-	if server.cache == nil {
+	if server != nil && server.cache == nil {
 		t.Error("Server.cache has not been initialized")
 	}
 }
@@ -30,6 +30,7 @@ func TestSet(t *testing.T) {
 	}()
 	defer server.Close()
 
+	time.Sleep(500 * time.Millisecond)
 	testCases := []struct {
 		name             string
 		key              []byte
@@ -128,19 +129,19 @@ func TestSet(t *testing.T) {
 				t.Errorf("Expected ok to be \"%v\", got \"%v\" instead",
 					tc.expectedResponse.ok, resp.ok)
 			}
-			if bytes.Compare(resp.command, tc.expectedResponse.command) != 0 {
+			if !bytes.Equal(resp.command, tc.expectedResponse.command) {
 				t.Errorf("Expected command to be \"%s\", got \"%s\" instead",
 					string(tc.expectedResponse.command), string(resp.command))
 			}
-			if bytes.Compare(resp.message, tc.expectedResponse.message) != 0 {
+			if !bytes.Equal(resp.message, tc.expectedResponse.message) {
 				t.Errorf("Expected message to be \"%s\", got \"%s\" instead",
 					string(tc.expectedResponse.message), string(resp.message))
 			}
-			if bytes.Compare(resp.key, tc.expectedResponse.key) != 0 {
+			if !bytes.Equal(resp.key, tc.expectedResponse.key) {
 				t.Errorf("Expected key to be \"%s\", got \"%s\" instead",
 					string(tc.expectedResponse.key), string(resp.key))
 			}
-			if bytes.Compare(resp.value, tc.expectedResponse.value) != 0 {
+			if !bytes.Equal(resp.value, tc.expectedResponse.value) {
 				t.Errorf("Expected value to be \"%s\", got \"%s\" instead",
 					string(tc.expectedResponse.value), string(resp.value))
 			}
@@ -150,7 +151,7 @@ func TestSet(t *testing.T) {
 				if !ok {
 					t.Error("Value is missing in Server.cache")
 				}
-				if bytes.Compare(req.value, valInCache) != 0 {
+				if !bytes.Equal(req.value, valInCache) {
 					t.Errorf("Expected value in Server.cache to be \"%s\", got \"%s\" instead",
 						string(req.value), string(valInCache))
 				}
@@ -169,6 +170,7 @@ func TestGet(t *testing.T) {
 	}()
 	defer server.Close()
 
+	time.Sleep(500 * time.Millisecond)
 	testCases := []struct {
 		name             string
 		key              []byte
@@ -253,19 +255,19 @@ func TestGet(t *testing.T) {
 				t.Errorf("Expected ok to be \"%v\", got \"%v\" instead",
 					tc.expectedResponse.ok, resp.ok)
 			}
-			if bytes.Compare(resp.command, tc.expectedResponse.command) != 0 {
+			if !bytes.Equal(resp.command, tc.expectedResponse.command) {
 				t.Errorf("Expected command to be \"%s\", got \"%s\" instead",
 					string(tc.expectedResponse.command), string(resp.command))
 			}
-			if bytes.Compare(resp.message, tc.expectedResponse.message) != 0 {
+			if !bytes.Equal(resp.message, tc.expectedResponse.message) {
 				t.Errorf("Expected message to be \"%s\", got \"%s\" instead",
 					string(tc.expectedResponse.message), string(resp.message))
 			}
-			if bytes.Compare(resp.key, tc.expectedResponse.key) != 0 {
+			if !bytes.Equal(resp.key, tc.expectedResponse.key) {
 				t.Errorf("Expected key to be \"%s\", got \"%s\" instead",
 					string(tc.expectedResponse.key), string(resp.key))
 			}
-			if bytes.Compare(resp.value, tc.expectedResponse.value) != 0 {
+			if !bytes.Equal(resp.value, tc.expectedResponse.value) {
 				t.Errorf("Expected value to be \"%s\", got \"%s\" instead",
 					string(tc.expectedResponse.value), string(resp.value))
 			}
@@ -283,6 +285,7 @@ func TestDelete(t *testing.T) {
 	}()
 	defer server.Close()
 
+	time.Sleep(500 * time.Millisecond)
 	testCases := []struct {
 		name             string
 		key              []byte
@@ -355,19 +358,19 @@ func TestDelete(t *testing.T) {
 				t.Errorf("Expected ok to be \"%v\", got \"%v\" instead",
 					tc.expectedResponse.ok, resp.ok)
 			}
-			if bytes.Compare(resp.command, tc.expectedResponse.command) != 0 {
+			if !bytes.Equal(resp.command, tc.expectedResponse.command) {
 				t.Errorf("Expected command to be \"%s\", got \"%s\" instead",
 					string(tc.expectedResponse.command), string(resp.command))
 			}
-			if bytes.Compare(resp.message, tc.expectedResponse.message) != 0 {
+			if !bytes.Equal(resp.message, tc.expectedResponse.message) {
 				t.Errorf("Expected message to be \"%s\", got \"%s\" instead",
 					string(tc.expectedResponse.message), string(resp.message))
 			}
-			if bytes.Compare(resp.key, tc.expectedResponse.key) != 0 {
+			if !bytes.Equal(resp.key, tc.expectedResponse.key) {
 				t.Errorf("Expected key to be \"%s\", got \"%s\" instead",
 					string(tc.expectedResponse.key), string(resp.key))
 			}
-			if bytes.Compare(resp.value, tc.expectedResponse.value) != 0 {
+			if !bytes.Equal(resp.value, tc.expectedResponse.value) {
 				t.Errorf("Expected value to be \"%s\", got \"%s\" instead",
 					string(tc.expectedResponse.value), string(resp.value))
 			}
@@ -387,6 +390,8 @@ func TestPurge(t *testing.T) {
 		}
 	}()
 	defer server.Close()
+
+	time.Sleep(500 * time.Millisecond)
 
 	expectedResponse := response{
 		command: []byte("PURGE"),
@@ -422,19 +427,19 @@ func TestPurge(t *testing.T) {
 		t.Errorf("Expected ok to be \"%v\", got \"%v\" instead",
 			expectedResponse.ok, resp.ok)
 	}
-	if bytes.Compare(resp.command, expectedResponse.command) != 0 {
+	if !bytes.Equal(resp.command, expectedResponse.command) {
 		t.Errorf("Expected command to be \"%s\", got \"%s\" instead",
 			string(expectedResponse.command), string(resp.command))
 	}
-	if bytes.Compare(resp.message, expectedResponse.message) != 0 {
+	if !bytes.Equal(resp.message, expectedResponse.message) {
 		t.Errorf("Expected message to be \"%s\", got \"%s\" instead",
 			string(expectedResponse.message), string(resp.message))
 	}
-	if bytes.Compare(resp.key, expectedResponse.key) != 0 {
+	if !bytes.Equal(resp.key, expectedResponse.key) {
 		t.Errorf("Expected key to be \"%s\", got \"%s\" instead",
 			string(expectedResponse.key), string(resp.key))
 	}
-	if bytes.Compare(resp.value, expectedResponse.value) != 0 {
+	if !bytes.Equal(resp.value, expectedResponse.value) {
 		t.Errorf("Expected value to be \"%s\", got \"%s\" instead",
 			string(expectedResponse.value), string(resp.value))
 	}
@@ -452,6 +457,8 @@ func TestLength(t *testing.T) {
 		}
 	}()
 	defer server.Close()
+
+	time.Sleep(500 * time.Millisecond)
 
 	expectedResponse := response{
 		command: []byte("LENGTH"),
@@ -489,19 +496,19 @@ func TestLength(t *testing.T) {
 		t.Errorf("Expected ok to be \"%v\", got \"%v\" instead",
 			expectedResponse.ok, resp.ok)
 	}
-	if bytes.Compare(resp.command, expectedResponse.command) != 0 {
+	if !bytes.Equal(resp.command, expectedResponse.command) {
 		t.Errorf("Expected command to be \"%s\", got \"%s\" instead",
 			string(expectedResponse.command), string(resp.command))
 	}
-	if bytes.Compare(resp.message, expectedResponse.message) != 0 {
+	if !bytes.Equal(resp.message, expectedResponse.message) {
 		t.Errorf("Expected message to be \"%s\", got \"%s\" instead",
 			string(expectedResponse.message), string(resp.message))
 	}
-	if bytes.Compare(resp.key, expectedResponse.key) != 0 {
+	if !bytes.Equal(resp.key, expectedResponse.key) {
 		t.Errorf("Expected key to be \"%s\", got \"%s\" instead",
 			string(expectedResponse.key), string(resp.key))
 	}
-	if bytes.Compare(resp.value, expectedResponse.value) != 0 {
+	if !bytes.Equal(resp.value, expectedResponse.value) {
 		t.Errorf("Expected value to be \"%s\", got \"%s\" instead",
 			string(expectedResponse.value), string(resp.value))
 	}
@@ -521,6 +528,8 @@ func TestKeys(t *testing.T) {
 		}
 	}()
 	defer server.Close()
+
+	time.Sleep(500 * time.Millisecond)
 
 	expectedResponse := response{
 		command: []byte("KEYS"),
@@ -558,15 +567,15 @@ func TestKeys(t *testing.T) {
 		t.Errorf("Expected ok to be \"%v\", got \"%v\" instead",
 			expectedResponse.ok, resp.ok)
 	}
-	if bytes.Compare(resp.command, expectedResponse.command) != 0 {
+	if !bytes.Equal(resp.command, expectedResponse.command) {
 		t.Errorf("Expected command to be \"%s\", got \"%s\" instead",
 			string(expectedResponse.command), string(resp.command))
 	}
-	if bytes.Compare(resp.message, expectedResponse.message) != 0 {
+	if !bytes.Equal(resp.message, expectedResponse.message) {
 		t.Errorf("Expected message to be \"%s\", got \"%s\" instead",
 			string(expectedResponse.message), string(resp.message))
 	}
-	if bytes.Compare(resp.key, expectedResponse.key) != 0 {
+	if !bytes.Equal(resp.key, expectedResponse.key) {
 		t.Errorf("Expected key to be \"%s\", got \"%s\" instead",
 			string(expectedResponse.key), string(resp.key))
 	}
@@ -592,6 +601,8 @@ func TestPing(t *testing.T) {
 		}
 	}()
 	defer server.Close()
+
+	time.Sleep(500 * time.Millisecond)
 
 	expectedResponse := response{
 		command: []byte("PING"),
@@ -623,19 +634,19 @@ func TestPing(t *testing.T) {
 		t.Errorf("Expected ok to be \"%v\", got \"%v\" instead",
 			expectedResponse.ok, resp.ok)
 	}
-	if bytes.Compare(resp.command, expectedResponse.command) != 0 {
+	if !bytes.Equal(resp.command, expectedResponse.command) {
 		t.Errorf("Expected command to be \"%s\", got \"%s\" instead",
 			string(expectedResponse.command), string(resp.command))
 	}
-	if bytes.Compare(resp.message, expectedResponse.message) != 0 {
+	if !bytes.Equal(resp.message, expectedResponse.message) {
 		t.Errorf("Expected message to be \"%s\", got \"%s\" instead",
 			string(expectedResponse.message), string(resp.message))
 	}
-	if bytes.Compare(resp.key, expectedResponse.key) != 0 {
+	if !bytes.Equal(resp.key, expectedResponse.key) {
 		t.Errorf("Expected key to be \"%s\", got \"%s\" instead",
 			string(expectedResponse.key), string(resp.key))
 	}
-	if bytes.Compare(resp.value, expectedResponse.value) != 0 {
+	if !bytes.Equal(resp.value, expectedResponse.value) {
 		t.Errorf("Expected value to be \"%s\", got \"%s\" instead",
 			string(expectedResponse.value), string(resp.value))
 	}
@@ -650,6 +661,8 @@ func TestClose(t *testing.T) {
 		}
 	}()
 	defer server.Close()
+
+	time.Sleep(500 * time.Millisecond)
 
 	expectedResponse := response{
 		command: []byte("CLOSE"),
@@ -681,19 +694,19 @@ func TestClose(t *testing.T) {
 		t.Errorf("Expected ok to be \"%v\", got \"%v\" instead",
 			expectedResponse.ok, resp.ok)
 	}
-	if bytes.Compare(resp.command, expectedResponse.command) != 0 {
+	if !bytes.Equal(resp.command, expectedResponse.command) {
 		t.Errorf("Expected command to be \"%s\", got \"%s\" instead",
 			string(expectedResponse.command), string(resp.command))
 	}
-	if bytes.Compare(resp.message, expectedResponse.message) != 0 {
+	if !bytes.Equal(resp.message, expectedResponse.message) {
 		t.Errorf("Expected message to be \"%s\", got \"%s\" instead",
 			string(expectedResponse.message), string(resp.message))
 	}
-	if bytes.Compare(resp.key, expectedResponse.key) != 0 {
+	if !bytes.Equal(resp.key, expectedResponse.key) {
 		t.Errorf("Expected key to be \"%s\", got \"%s\" instead",
 			string(expectedResponse.key), string(resp.key))
 	}
-	if bytes.Compare(resp.value, expectedResponse.value) != 0 {
+	if !bytes.Equal(resp.value, expectedResponse.value) {
 		t.Errorf("Expected value to be \"%s\", got \"%s\" instead",
 			string(expectedResponse.value), string(resp.value))
 	}

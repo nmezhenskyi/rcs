@@ -1,46 +1,39 @@
-.PHONY: build
-build:
+.PHONY: build genproto dev run test tidy clean cleanproto cleanall
+
+PROTO_IN_DIR := api/protobuf
+PROTO_OUT_DIR := internal/genproto
+PROTOS := $(wildcard $(PROTO_IN_DIR)/*.proto)
+
+$(PROTO_OUT_DIR): $(PROTOS)
+	mkdir -p $@
+	protoc --proto_path=$(PROTO_IN_DIR) \
+		--go_out=$@ --go_opt=paths=source_relative \
+		--go-grpc_out=$@ --go-grpc_opt=paths=source_relative \
+		$(PROTOS)
+
+build: $(PROTO_OUT_DIR)
 	go build -o ./bin/rcs ./cmd
 
-.PHONY: genproto
-genproto:
-	mkdir -p internal/genproto
-	protoc --proto_path=api/protobuf \
-		--go_out=internal/genproto --go_opt=paths=source_relative \
-		--go-grpc_out=internal/genproto --go-grpc_opt=paths=source_relative \
-		rcs.proto
+genproto: $(PROTO_OUT_DIR)
 
-.PHONY: dev
 dev:
 	go run ./cmd
 
-.PHONY: run
-run:
+run: build
 	./bin/rcs
 
-.PHONY: test
 test:
 	go test ./internal/**
 
-.PHONY: tidy
 tidy:
 	go mod tidy
 
-.PHONY: clean
 clean:
 	-@rm -r ./bin 2>/dev/null || true
 
-.PHONY: cleanproto
 cleanproto:
-	-@rm -r ./internal/genproto 2>/dev/null || true
+	-@rm -r $(PROTO_OUT_DIR) 2>/dev/null || true
 
-.PHONY: cleanall
 cleanall: clean cleanproto
 
-.PHONY: setup
-setup: genproto build
-
-.PHONY: compile
-compile: build run
-
-.DEFAULT_GOAL := compile
+.DEFAULT_GOAL := run

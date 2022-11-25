@@ -52,7 +52,7 @@ func parseRequest(msg []byte) (request, error) {
 	}
 	msgLines[linesCount-1] = bytes.TrimSuffix(msgLines[linesCount-1], []byte("\r\n"))
 	headerTokens := bytes.Split(msgLines[0], []byte(" "))
-	if len(headerTokens) != 2 || bytes.Compare(headerTokens[0], []byte("RCSP/1.0")) != 0 {
+	if len(headerTokens) != 2 || !bytes.Equal(headerTokens[0], []byte("RCSP/1.0")) {
 		return request{}, ErrUnknownProtocol
 	}
 
@@ -68,7 +68,7 @@ func parseRequest(msg []byte) (request, error) {
 		keyTokens := bytes.SplitN(msgLines[1], []byte(": "), 2)
 		if len(keyTokens) != 2 {
 			encounteredErr = ErrInvalidKey
-		} else if bytes.Compare(keyTokens[0], []byte("KEY")) != 0 {
+		} else if !bytes.Equal(keyTokens[0], []byte("KEY")) {
 			encounteredErr = ErrMalformedRequest
 		} else {
 			parsedReq.key = keyTokens[1]
@@ -77,7 +77,7 @@ func parseRequest(msg []byte) (request, error) {
 	// Parse Value:
 	if linesCount > 2 {
 		valueTokens := bytes.SplitN(msgLines[2], []byte(": "), 2)
-		if len(valueTokens) != 2 || bytes.Compare(valueTokens[0], []byte("VALUE")) != 0 {
+		if len(valueTokens) != 2 || !bytes.Equal(valueTokens[0], []byte("VALUE")) {
 			encounteredErr = ErrMalformedRequest
 		} else {
 			parsedReq.value = valueTokens[1]
@@ -158,7 +158,7 @@ func parseResponse(msg []byte) (response, error) {
 	if len(headerTokens) < 2 {
 		return response{}, ErrMalformedResponse
 	}
-	if bytes.Compare(headerTokens[0], []byte("RCSP/1.0")) != 0 {
+	if !bytes.Equal(headerTokens[0], []byte("RCSP/1.0")) {
 		return response{}, ErrUnknownProtocol
 	}
 
@@ -176,9 +176,9 @@ func parseResponse(msg []byte) (response, error) {
 	} else {
 		return response{}, ErrMalformedResponse
 	}
-	if bytes.Compare(headerTokens[okTokenIndex], []byte("OK")) == 0 {
+	if bytes.Equal(headerTokens[okTokenIndex], []byte("OK")) {
 		parsedResp.ok = true
-	} else if bytes.Compare(headerTokens[okTokenIndex], []byte("NOT_OK")) != 0 {
+	} else if !bytes.Equal(headerTokens[okTokenIndex], []byte("NOT_OK")) {
 		encounteredErr = ErrMalformedResponse
 	}
 

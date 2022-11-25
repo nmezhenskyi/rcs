@@ -1,23 +1,50 @@
+// Package cache contains all internal cache implementations for RCS.
 package cache
 
-import "sync"
+import (
+	"sync"
+	"time"
+)
 
 // CacheMap represents in-memory key-value table safe for concurrent usage.
 // Uses strings as keys. Stores items with byte slices and expiration time.
 type CacheMap struct {
+	cleanupInterval time.Duration
+	stop            chan struct{}
+
 	mu    sync.RWMutex
 	items map[string]item
 }
 
-// NewCacheMap returns pointer to initialized CacheMap.
+// NewCacheMap returns pointer to initialized CacheMap without cleanup routine.
 func NewCacheMap() *CacheMap {
 	return &CacheMap{items: make(map[string]item)}
 }
 
-// Set sets given value for the given key, possible overwriting it.
+// NewCacheMap returns pointer to initialized CacheMap with cleanup routine.
+func NewCacheMapWithCleanup(interval time.Duration) *CacheMap {
+	c := &CacheMap{
+		cleanupInterval: interval,
+		items:           make(map[string]item),
+	}
+	if c.cleanupInterval > 0 {
+		go c.startCleanup()
+	}
+	return c
+}
+
+// Set sets given value for the given key, possibly overwriting it.
 func (cm *CacheMap) Set(key string, value []byte) {
 	cm.mu.Lock()
 	cm.items[key] = item{data: value}
+	cm.mu.Unlock()
+}
+
+// SetEx sets given value for the given key, and an expiration time.
+// Overwrites the previous value for the key.
+func (cm *CacheMap) SetEx(key string, value []byte, expires int64) {
+	cm.mu.Lock()
+	cm.items[key] = item{data: value, expires: expires}
 	cm.mu.Unlock()
 }
 
@@ -27,6 +54,9 @@ func (cm *CacheMap) Get(key string) ([]byte, bool) {
 	cm.mu.RLock()
 	value, ok := cm.items[key]
 	cm.mu.RUnlock()
+	if value.isExpired() {
+		return nil, false
+	}
 	return value.data, ok
 }
 
@@ -64,4 +94,36 @@ func (cm *CacheMap) Keys() []string {
 	}
 	cm.mu.RUnlock()
 	return keys
+}
+
+func (cm *CacheMap) StopCleanup() {
+	if cm.stop != nil {
+		cm.stop <- struct{}{}
+	}
+}
+
+func (cm *CacheMap) startCleanup() {
+	cm.stop = make(chan struct{})
+
+	ticker := time.NewTicker(cm.cleanupInterval)
+	for {
+		select {
+		case <-ticker.C:
+			cm.deleteExpired()
+		case <-cm.stop:
+			ticker.Stop()
+			cm.stop = nil
+			return
+		}
+	}
+}
+
+func (cm *CacheMap) deleteExpired() {
+	cm.mu.Lock()
+	for k, v := range cm.items {
+		if v.isExpired() {
+			delete(cm.items, k)
+		}
+	}
+	cm.mu.Unlock()
 }

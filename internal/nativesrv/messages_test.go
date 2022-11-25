@@ -119,15 +119,15 @@ func TestParseRequest(t *testing.T) {
 				t.Errorf("Expected error value \"%v\", got \"%v\" instead",
 					tc.expectedErr, err)
 			}
-			if bytes.Compare(req.command, tc.expectedReq.command) != 0 {
+			if !bytes.Equal(req.command, tc.expectedReq.command) {
 				t.Errorf("Expected command \"%s\", got \"%s\" instead",
 					string(tc.expectedReq.command), string(req.command))
 			}
-			if bytes.Compare(req.key, tc.expectedReq.key) != 0 {
+			if !bytes.Equal(req.key, tc.expectedReq.key) {
 				t.Errorf("Expected key \"%s\", got \"%s\" instead",
 					string(tc.expectedReq.key), string(req.key))
 			}
-			if bytes.Compare(req.value, tc.expectedReq.value) != 0 {
+			if !bytes.Equal(req.value, tc.expectedReq.value) {
 				t.Errorf("Expected value \"%s\", got \"%s\" instead",
 					string(tc.expectedReq.value), string(req.value))
 			}
@@ -253,7 +253,7 @@ func TestParseResponse(t *testing.T) {
 				t.Errorf("Expected error value \"%v\", got \"%v\" instead",
 					tc.expectedErr, err)
 			}
-			if bytes.Compare(resp.command, tc.expectedResp.command) != 0 {
+			if !bytes.Equal(resp.command, tc.expectedResp.command) {
 				t.Errorf("Expected command \"%s\", got \"%s\" instead",
 					string(tc.expectedResp.command), string(resp.command))
 			}
@@ -261,15 +261,15 @@ func TestParseResponse(t *testing.T) {
 				t.Errorf("Expected ok to be \"%v\", got \"%v\" instead",
 					tc.expectedResp.ok, resp.ok)
 			}
-			if bytes.Compare(resp.message, tc.expectedResp.message) != 0 {
+			if !bytes.Equal(resp.message, tc.expectedResp.message) {
 				t.Errorf("Expected message \"%s\", got \"%s\" instead",
 					string(tc.expectedResp.message), string(resp.message))
 			}
-			if bytes.Compare(resp.key, tc.expectedResp.key) != 0 {
+			if !bytes.Equal(resp.key, tc.expectedResp.key) {
 				t.Errorf("Expected key \"%s\", got \"%s\" instead",
 					string(tc.expectedResp.key), string(resp.key))
 			}
-			if bytes.Compare(resp.value, tc.expectedResp.value) != 0 {
+			if !bytes.Equal(resp.value, tc.expectedResp.value) {
 				t.Errorf("Expected value \"%s\", got \"%s\" instead",
 					string(tc.expectedResp.value), string(resp.value))
 			}

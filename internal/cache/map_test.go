@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"sort"
 	"testing"
+	"time"
 )
 
 func TestNewCacheMap(t *testing.T) {
@@ -14,6 +15,25 @@ func TestNewCacheMap(t *testing.T) {
 	if cmap != nil && cmap.items == nil {
 		t.Error("CacheMap.items field is nil")
 	}
+	if cmap.cleanupInterval != 0 {
+		t.Errorf("CacheMap.cleanupInterval is not 0")
+	}
+}
+
+func TestNewCacheMapWithCleanup(t *testing.T) {
+	interval := 5 * time.Minute
+	cmap := NewCacheMapWithCleanup(interval)
+	if cmap == nil {
+		t.Error("Expected pointer to initialized CacheMap, got nil instead")
+	}
+	if cmap != nil && cmap.items == nil {
+		t.Error("CacheMap.items field is nil")
+	}
+	if cmap.cleanupInterval != interval {
+		t.Errorf("Expected CacheMap.cleanupInterval to be %s, got %s instead",
+			interval.String(), cmap.cleanupInterval.String())
+	}
+	cmap.StopCleanup()
 }
 
 func TestSet(t *testing.T) {
@@ -70,6 +90,7 @@ func TestGet(t *testing.T) {
 		t.Errorf("Found nonexistent key")
 	}
 
+	// Valid item:
 	cmap.items = map[string]item{key: {data: value}}
 	retrieved, ok := cmap.Get(key)
 	if !ok {
@@ -77,6 +98,17 @@ func TestGet(t *testing.T) {
 	}
 	if !bytes.Equal(retrieved, value) {
 		t.Error("Retrieved value is not the same")
+	}
+
+	// Expired item:
+	cmap.items = map[string]item{key: {data: value, expires: -100}}
+	retrieved, ok = cmap.Get(key)
+	if ok {
+		t.Errorf("Expected ok to be false, got %v instead", ok)
+	}
+	if retrieved != nil {
+		t.Errorf("Expected retrieved value to be nil, got %s instead",
+			string(retrieved))
 	}
 }
 

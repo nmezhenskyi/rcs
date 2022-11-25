@@ -1,8 +1,7 @@
 syntax = "proto3";
+package rcs;
 
 option go_package = "github.com/nmezhenskyi/rcs/internal/genproto";
-
-package cache;
 
 service CacheService {
    rpc Set (SetRequest) returns (SetReply) {}

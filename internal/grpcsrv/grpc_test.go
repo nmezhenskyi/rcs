@@ -18,7 +18,7 @@ func TestNewServer(t *testing.T) {
 	if server == nil {
 		t.Error("Expected pointer to initialized Server, got nil instead")
 	}
-	if server.cache == nil {
+	if server != nil && server.cache == nil {
 		t.Error("Server.cache has not been initialized")
 	}
 }
@@ -120,7 +120,7 @@ func TestGet(t *testing.T) {
 			if reply.Key != tc.key {
 				t.Errorf("Expected key \"%s\", got \"%s\" instead", tc.key, reply.Key)
 			}
-			if bytes.Compare(reply.Value, tc.value) != 0 {
+			if !bytes.Equal(reply.Value, tc.value) {
 				t.Errorf("Expected value to be %v, got %v instead", tc.value, reply.Value)
 			}
 		})

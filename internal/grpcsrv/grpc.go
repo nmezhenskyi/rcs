@@ -74,12 +74,12 @@ func (s *Server) ListenAndServeTLS(addr, certFile, keyFile string) error {
 	s.opts = append(s.opts, grpc.Creds(creds))
 	s.server = grpc.NewServer(s.opts...)
 	pb.RegisterCacheServiceServer(s.server, s)
-	listener, err := net.Listen("tcp", addr)
+	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		s.Logger.Error().Err(err).Msg("failed to start tls listener")
 		return err
 	}
-	return s.server.Serve(listener)
+	return s.server.Serve(lis)
 }
 
 // Shutdown gracefully shuts down the server without interrupting any

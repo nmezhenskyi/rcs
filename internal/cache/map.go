@@ -96,6 +96,9 @@ func (cm *CacheMap) Keys() []string {
 	return keys
 }
 
+// StopCleanup stops the cache's cleanup routine if it was active.
+// This is useful for tests and potentially for manually
+// controlling cleanup cycles.
 func (cm *CacheMap) StopCleanup() {
 	if cm.stop != nil {
 		cm.stop <- struct{}{}

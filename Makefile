@@ -1,4 +1,4 @@
-.PHONY: build genproto dev run test tidy clean cleanproto cleanall
+.PHONY: build genproto dev run test cover tidy clean cleanproto cleanall
 
 PROTO_IN_DIR := api/protobuf
 PROTO_OUT_DIR := internal/genproto
@@ -24,6 +24,9 @@ run: build
 
 test:
 	go test ./internal/**
+
+cover:
+	go test -coverprofile cover.out ./internal/**
 
 tidy:
 	go mod tidy

@@ -7,6 +7,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	pb "github.com/nmezhenskyi/rcs/internal/genproto"
 	"google.golang.org/grpc"
@@ -34,6 +35,8 @@ func TestSet(t *testing.T) {
 	client, conn := newTestClient(serverAddr, t)
 	defer conn.Close()
 	defer server.Close()
+
+	time.Sleep(500 * time.Millisecond)
 
 	testCases := []struct {
 		name  string
@@ -90,6 +93,8 @@ func TestGet(t *testing.T) {
 	defer conn.Close()
 	defer server.Close()
 
+	time.Sleep(500 * time.Millisecond)
+
 	testCases := []struct {
 		name  string
 		key   string
@@ -142,6 +147,8 @@ func TestDelete(t *testing.T) {
 	defer conn.Close()
 	defer server.Close()
 
+	time.Sleep(500 * time.Millisecond)
+
 	lengthBefore := server.cache.Length()
 	reqData := &pb.DeleteRequest{Key: "key1"}
 	reply, err := client.Delete(context.Background(), reqData)
@@ -170,6 +177,8 @@ func TestPurge(t *testing.T) {
 	client, conn := newTestClient(serverAddr, t)
 	defer conn.Close()
 	defer server.Close()
+
+	time.Sleep(500 * time.Millisecond)
 
 	reqData := &pb.PurgeRequest{}
 	reply, err := client.Purge(context.Background(), reqData)
@@ -201,6 +210,8 @@ func TestLength(t *testing.T) {
 	defer conn.Close()
 	defer server.Close()
 
+	time.Sleep(500 * time.Millisecond)
+
 	actualLength := server.cache.Length()
 	reqData := &pb.LengthRequest{}
 	reply, err := client.Length(context.Background(), reqData)
@@ -231,6 +242,8 @@ func TestKeys(t *testing.T) {
 	client, conn := newTestClient(serverAddr, t)
 	defer conn.Close()
 	defer server.Close()
+
+	time.Sleep(500 * time.Millisecond)
 
 	expectedKeys := server.cache.Keys()
 	reqData := &pb.KeysRequest{}
@@ -266,6 +279,8 @@ func TestPing(t *testing.T) {
 	client, conn := newTestClient(serverAddr, t)
 	defer conn.Close()
 	defer server.Close()
+
+	time.Sleep(500 * time.Millisecond)
 
 	reqData := &pb.PingRequest{}
 	reply, err := client.Ping(context.Background(), reqData)

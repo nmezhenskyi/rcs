@@ -12,12 +12,14 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestNewServer(t *testing.T) {
 	server := NewServer(nil)
 	if server == nil {
 		t.Error("Expected pointer to initialized Server, got nil instead")
+		return
 	}
 	if server.server == nil {
 		t.Error("Server.server has not been initialized")
@@ -27,6 +29,22 @@ func TestNewServer(t *testing.T) {
 	}
 	if server.cache == nil {
 		t.Error("Server.cache has not been initialized")
+	}
+}
+
+func TestListenAndServe(t *testing.T) {
+	// Make sure Server implements http.Handler
+	var _ http.Handler = (*Server)(nil)
+	srv := NewServer(nil)
+	done := make(chan error)
+	go func(done chan<- error) {
+		done <- srv.ListenAndServe("localhost:6123")
+	}(done)
+	time.Sleep(500 * time.Millisecond)
+	srv.Close()
+	err := <-done
+	if err != nil {
+		t.Errorf("ListenAndServe failed with: %v", err)
 	}
 }
 
@@ -134,7 +152,7 @@ func TestGet(t *testing.T) {
 			if tc.expectedValue != nil && !ok {
 				t.Error("Not ok")
 			}
-			if bytes.Compare([]byte(val), tc.expectedValue) != 0 {
+			if !bytes.Equal([]byte(val), tc.expectedValue) {
 				t.Errorf("Expected value %v, got %v instead", tc.expectedValue, []byte(val))
 			}
 		})

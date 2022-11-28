@@ -182,12 +182,10 @@ func parseResponse(msg []byte) (response, error) {
 		encounteredErr = ErrMalformedResponse
 	}
 
-ParsingLoop:
 	for i := 1; i < len(msgLines); i++ {
 		tokenName, tokenValue, found := bytes.Cut(msgLines[i], []byte(": "))
 		if !found || len(tokenName) == 0 || len(tokenValue) == 0 {
-			encounteredErr = ErrMalformedResponse
-			break ParsingLoop
+			return parsedResp, ErrMalformedResponse
 		}
 		switch string(tokenName) {
 		case "MESSAGE":
@@ -197,8 +195,7 @@ ParsingLoop:
 		case "VALUE":
 			parsedResp.value = tokenValue
 		default:
-			encounteredErr = ErrMalformedResponse
-			break ParsingLoop
+			return parsedResp, ErrMalformedResponse
 		}
 	}
 

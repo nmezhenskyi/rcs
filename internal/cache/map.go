@@ -42,9 +42,13 @@ func (cm *CacheMap) Set(key string, value []byte) {
 
 // SetEx sets given value for the given key, and an expiration time.
 // Overwrites the previous value for the key.
-func (cm *CacheMap) SetEx(key string, value []byte, expires int64) {
+func (cm *CacheMap) SetEx(key string, value []byte, expires time.Duration) {
+	var expirationInNano int64
+	if expires > 0 {
+		expirationInNano = time.Now().Add(expires).UnixNano()
+	}
 	cm.mu.Lock()
-	cm.items[key] = item{data: value, expires: expires}
+	cm.items[key] = item{data: value, expires: expirationInNano}
 	cm.mu.Unlock()
 }
 

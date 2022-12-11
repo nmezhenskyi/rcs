@@ -24,6 +24,6 @@
       "keyFile": ""
    },
    "verbosity": "dev",
-
+   "cleanupInterval": "10m",
    "saveOnShutdown": true
 }

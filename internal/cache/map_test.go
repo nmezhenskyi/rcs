@@ -2,6 +2,7 @@ package cache
 
 import (
 	"bytes"
+	"fmt"
 	"sort"
 	"testing"
 	"time"
@@ -65,8 +66,8 @@ func TestSetEx(t *testing.T) {
 	cmap := NewCacheMap()
 	key := "key1"
 	value := []byte("value1")
-	expires := int64(1668819947000)
-	cmap.SetEx(key, value, expires)
+	expectedExp := time.Now().Add(1000 * time.Millisecond).UnixNano()
+	cmap.SetEx(key, value, 1000*time.Millisecond)
 
 	retrieved, ok := cmap.items[key]
 	if !ok {
@@ -75,8 +76,8 @@ func TestSetEx(t *testing.T) {
 	if !bytes.Equal(retrieved.data, value) {
 		t.Error("Retrieved value is not the same")
 	}
-	if retrieved.expires != expires {
-		t.Error("Stored expires time does not match the given value")
+	if time.Duration(retrieved.expires).Milliseconds() != time.Duration(expectedExp).Milliseconds() {
+		t.Error("Stored expires time does not match expected value")
 	}
 }
 
@@ -186,5 +187,60 @@ func TestKeys(t *testing.T) {
 		if keys[i] != expectedKeys[i] {
 			t.Errorf("Keys do not match the expected ones")
 		}
+	}
+}
+
+func TestCleanup(t *testing.T) {
+	cmap := NewCacheMapWithCleanup(1 * time.Millisecond)
+	noExpiration := time.Duration(0)
+	shouldExpire := 25 * time.Millisecond
+	shouldNotExpire := 150 * time.Millisecond
+
+	cmap.SetEx("key1", []byte("value1"), noExpiration)
+	cmap.SetEx("key2", []byte("value2"), shouldExpire)
+	cmap.SetEx("key3", []byte("value3"), shouldNotExpire)
+
+	<-time.After(30 * time.Millisecond)
+	_, ok := cmap.Get("key1")
+	if !ok {
+		t.Errorf("Expected \"key1\" to be present, didn't find it instead")
+	}
+	_, ok = cmap.Get("key2")
+	if ok {
+		t.Errorf("Expected \"key2\" to be deleted, found it instead")
+	}
+	_, ok = cmap.Get("key3")
+	if !ok {
+		t.Errorf("Expected \"key3\" to be present, didn't find it instead")
+	}
+}
+
+func TestStopCleanup(t *testing.T) {
+	cmap := NewCacheMapWithCleanup(10 * time.Millisecond)
+
+	cmap.SetEx("key1", []byte("value1"), 25*time.Millisecond)
+	cmap.SetEx("key2", []byte("value2"), 25*time.Millisecond)
+	cmap.SetEx("key3", []byte("value3"), 50*time.Millisecond)
+
+	<-time.After(30 * time.Millisecond)
+	_, ok := cmap.Get("key1")
+	if ok {
+		t.Errorf("Expected \"key1\" to be deleted, found it instead")
+	}
+	_, ok = cmap.Get("key2")
+	if ok {
+		t.Errorf("Expected \"key2\" to be deleted, found it instead")
+	}
+	val, ok := cmap.Get("key3")
+	if !ok {
+		t.Errorf("Expected \"key3\" to be present, didn't find it instead")
+	}
+	fmt.Printf("Key3: %s\n", string(val))
+
+	cmap.StopCleanup()
+	<-time.After(100 * time.Millisecond)
+	_, ok = cmap.items["key3"] // Check in the map directly because Get() will not return expired.
+	if !ok {
+		t.Errorf("Expected \"key3\" to be present, didn't find it instead")
 	}
 }

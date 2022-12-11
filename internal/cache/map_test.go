@@ -2,6 +2,7 @@ package cache
 
 import (
 	"bytes"
+	"fmt"
 	"sort"
 	"testing"
 	"time"
@@ -209,6 +210,36 @@ func TestCleanup(t *testing.T) {
 		t.Errorf("Expected \"key2\" to be deleted, found it instead")
 	}
 	_, ok = cmap.Get("key3")
+	if !ok {
+		t.Errorf("Expected \"key3\" to be present, didn't find it instead")
+	}
+}
+
+func TestStopCleanup(t *testing.T) {
+	cmap := NewCacheMapWithCleanup(10 * time.Millisecond)
+
+	cmap.SetEx("key1", []byte("value1"), 25*time.Millisecond)
+	cmap.SetEx("key2", []byte("value2"), 25*time.Millisecond)
+	cmap.SetEx("key3", []byte("value3"), 50*time.Millisecond)
+
+	<-time.After(30 * time.Millisecond)
+	_, ok := cmap.Get("key1")
+	if ok {
+		t.Errorf("Expected \"key1\" to be deleted, found it instead")
+	}
+	_, ok = cmap.Get("key2")
+	if ok {
+		t.Errorf("Expected \"key2\" to be deleted, found it instead")
+	}
+	val, ok := cmap.Get("key3")
+	if !ok {
+		t.Errorf("Expected \"key3\" to be present, didn't find it instead")
+	}
+	fmt.Printf("Key3: %s\n", string(val))
+
+	cmap.StopCleanup()
+	<-time.After(100 * time.Millisecond)
+	_, ok = cmap.items["key3"] // Check in the map directly because Get() will not return expired.
 	if !ok {
 		t.Errorf("Expected \"key3\" to be present, didn't find it instead")
 	}

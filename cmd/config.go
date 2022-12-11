@@ -34,10 +34,12 @@ type httpConf struct {
 
 // config contains configurable settings for the program.
 type config struct {
-	Native    nativeConf `json:"native"`    // Settings for Native server.
-	GRPC      grpcConf   `json:"grpc"`      // Settings for GRPC server.
-	HTTP      httpConf   `json:"http"`      // Settings for HTTP server.
-	Verbosity string     `json:"verbosity"` // Accepted values: "prod", "dev", or "none".
+	Native          nativeConf `json:"native"`          // Settings for Native server.
+	GRPC            grpcConf   `json:"grpc"`            // Settings for GRPC server.
+	HTTP            httpConf   `json:"http"`            // Settings for HTTP server.
+	Verbosity       string     `json:"verbosity"`       // Accepted values: "prod", "dev", or "none".
+	CleanupInterval string     `json:"cleanupInterval"` // Takes the format: "10s", "5m", or "1h".
+	SaveOnShutdown  bool       `json:"saveOnShutdown"`  // Enables data serialization to disk on shutdown.
 }
 
 // readConfig reads the configurating file and initializes config struct with its

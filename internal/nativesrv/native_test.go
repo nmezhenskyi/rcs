@@ -2,6 +2,7 @@ package nativesrv
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"net"
 	"strconv"
@@ -17,6 +18,32 @@ func TestNewServer(t *testing.T) {
 	}
 	if server != nil && server.cache == nil {
 		t.Error("Server.cache has not been initialized")
+	}
+}
+
+func TestShutdown(t *testing.T) {
+	server := NewServer(nil)
+	serverAddr := "localhost:6121"
+	go func() {
+		if err := server.ListenAndServe(serverAddr); err != nil {
+			t.Errorf("Server failed: %v", err)
+		}
+	}()
+	defer server.Close()
+
+	time.Sleep(500 * time.Millisecond)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := server.Shutdown(ctx)
+	if err != nil {
+		t.Errorf("Shutdown failed: %v", err)
+	}
+
+	_, err = net.Dial("tcp", serverAddr)
+	if err == nil {
+		t.Error("Expected connection to fail after shutdown, but Dial was successful")
 	}
 }
 

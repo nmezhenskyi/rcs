@@ -24,6 +24,34 @@ func TestNewServer(t *testing.T) {
 	}
 }
 
+func TestShutdown(t *testing.T) {
+	server := NewServer(nil)
+	serverAddr := "localhost:6122"
+	go func() {
+		if err := server.ListenAndServe(serverAddr); err != nil {
+			t.Errorf("Server failed: %v", err)
+		}
+	}()
+	client, conn := newTestClient(serverAddr, t)
+	defer conn.Close()
+	defer server.Close()
+
+	time.Sleep(500 * time.Millisecond)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := server.Shutdown(ctx)
+	if err != nil {
+		t.Errorf("Shutdown failed: %v", err)
+	}
+
+	_, err = client.Ping(context.Background(), &pb.PingRequest{})
+	if err == nil {
+		t.Error("Expected Ping to fail after shutdown, but the request was processed")
+	}
+}
+
 func TestSet(t *testing.T) {
 	server := NewServer(nil)
 	serverAddr := "localhost:6122"

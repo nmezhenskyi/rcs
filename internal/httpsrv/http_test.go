@@ -4,6 +4,7 @@ package httpsrv
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -45,6 +46,33 @@ func TestListenAndServe(t *testing.T) {
 	err := <-done
 	if err != nil {
 		t.Errorf("ListenAndServe failed with: %v", err)
+	}
+}
+
+func TestShutdown(t *testing.T) {
+	srv := NewServer(nil)
+	done := make(chan error)
+	go func(done chan<- error) {
+		done <- srv.ListenAndServe("localhost:6123")
+	}(done)
+	time.Sleep(500 * time.Millisecond)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := srv.Shutdown(ctx)
+	if err != nil {
+		t.Errorf("Shutdown failed: %v", err)
+	}
+
+	err = <-done
+	if err != nil {
+		t.Errorf("ListenAndServe failed with: %v", err)
+	}
+
+	_, err = http.Get("http://localhost:6123/PING")
+	if err == nil {
+		t.Error("Expected GET /PING to fail after shutdown, but the request was processed")
 	}
 }
 
